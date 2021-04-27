@@ -1046,4 +1046,529 @@ info <- select(hgu133a.db, rownames(table_sensitive), c("SYMBOL","GENENAME"))
 table_sensitive <- cbind(table_sensitive,info)
 write.csv(table_sensitive, 'table_sensitive_probe_ann.csv')
 
-#----------------------------------------------- DGE analysis (based on chemosensitivity) ------------------------------------------
+#----------------------------------------------- DGE analysis (based on AJCC) ------------------------------------------
+tnbc <- tnbc[order(tnbc$ajcc),] 
+nontnbc <- nontnbc[order(nontnbc$ajcc),]
+
+#filter by stage number
+stage1t <- tnbc %>% filter(ajcc == "I" | ajcc == "IA" | ajcc == "IB" | ajcc == "IC") #4 samples
+stage2t <- tnbc %>% filter(ajcc == "II" | ajcc == "IIA" | ajcc == "IIB" | ajcc == "IIC") #85
+stage3t <- tnbc %>% filter(ajcc == "III" | ajcc == "IIIA" | ajcc == "IIIB" | ajcc == "IIIC") #87
+stage1n <- nontnbc %>% filter(ajcc == "I" | ajcc == "IA" | ajcc == "IB" | ajcc == "IC") #4 cases
+stage2n <- nontnbc %>% filter(ajcc == "II" | ajcc == "IIA" | ajcc == "IIB" | ajcc == "IIC") #187
+stage3n <- nontnbc %>% filter(ajcc == "III" | ajcc == "IIIA" | ajcc == "IIIB" | ajcc == "IIIC") #137
+
+ajcc <- rbind(stage1t, stage2t, stage3t,stage1n, stage2n, stage3n)
+other <- sdata[!sdata$sample.no.%in%ajcc$sample.no.,]   #4
+other$subtypes = 'other'
+
+ajcc <- rbind(ajcc,other)
+rawdata_ajcc  <- read.celfiles(ajcc$celfiles)
+normdata_ajcc <-rma(rawdata_ajcc) #normalise the rawdata
+eset_ajcc <- exprs(normdata_ajcc)
+
+# compare stage2 (TNBC) to stage 2 (non-TNBC)
+# draw volcano plots for each pairwise comparison
+mypch_ajcc <- c(rep(1,4),rep(2,85),rep(3,87),rep(4,4),rep(5,187),rep(6,137),rep(7,4)) 
+design_ajcc <- model.matrix(~-1+factor(mypch_ajcc))
+colnames(design_ajcc)<- c('Stage1t', 'Stage2t','Stage3t','Stage1n', 'Stage2n','Stage3n','other') #  group labels
+
+top0_ajcc <-  eBayes(contrasts.fit(lmFit(normdata_ajcc, design_ajcc), makeContrasts(Stage2t - Stage2n, levels=design_ajcc))) #compare stage2 of tnbc to stage2 of nontnbc
+top1_stage2 <- topTable(top0_ajcc, coef='Stage2t - Stage2n',adjust='BH',number=22283,sort.by='P')
+
+#upregulated probes in stage 2t
+up.reg_tnbc_ajcc <- top1_stage2 %>%filter(top1_stage2$logFC > 1.5) 
+up.reg_tnbc_ajcc  <- up.reg_tnbc_ajcc %>%filter(up.reg_tnbc_ajcc$ adj.P.Val<0.05)
+names_upreg_tnbc_ajcc <- rownames(up.reg_tnbc_ajcc) #9
+#upregulated probes in stage 2n
+up.reg_nontnbc_ajcc <- top1_stage2%>%filter(top1_stage2 $logFC < -1.5)
+up.reg_nontnbc_ajcc  <- up.reg_nontnbc_ajcc %>%filter(up.reg_nontnbc_ajcc$ adj.P.Val<0.05)
+names_upreg_nontnbc_ajcc <- rownames(up.reg_nontnbc_ajcc) #31
+
+png(file="volcano-TNBC-ajcc-stage2t_vs_stage2n.png",units="px")
+plot(top1_stage2$logFC,-log10(top1_stage2$adj.P.Val), main='Differential Gene Expression \n between TNBC Stage2 and Non-TNBC Stage2', xlab='log2FC(TNBC Stage2/Non-TNBC Stage2)',ylab='-log10(BH P value)', cex=0.5, cex.main=1.2,cex.axis=1, cex.lab=1, pch=21,xlim=c(-2,2))
+text(1.5,40,label='Upregulated in \n TNBC Stage2',cex=1)
+text(-1.5,40,label='Upregulated in \n Non-TNBC Stage2',cex=1)
+abline(v=-1.5, col="red")
+abline(v=1.5, col="red")
+abline(h=1.3, col="green")
+dev.off()
+
+#probes annotation
+dd_stage2 <- subset(top1_stage2, adj.P.Val<0.05 & abs(logFC)>1.5) # subset extreme values
+str(dd_stage2) 
+out_stage2 <- data.frame(xxhuex[rownames(dd_stage2)] ) # search for rownames example
+
+acc_no_stage2 <- NULL # gene ids
+for (i in 1:length(rownames(dd_stage2))){ acc_no_stage2 <- c(acc_no_stage2, out_stage2[, paste0("X", rownames(dd_stage2)[i])]) }
+dd_stage2 <- cbind(acc_no_stage2, dd_stage2) # get probe and gene IDs
+dd_tbl_stage2  <- as.data.table(dd_stage2) # print as table 
+df_stage2 <- data.frame(dd_stage2)
+df_stage2 $DGE <- 'AJCC-stage2'
+table_tnbc_nontnbc_stage2 <- subset(df_stage2, select=c('acc_no_stage2','logFC','adj.P.Val'))
+info <- select(hgu133a.db, rownames(table_tnbc_nontnbc_stage2), c("SYMBOL","GENENAME"))
+table_tnbc_nontnbc_stage2 <- cbind(table_tnbc_nontnbc_stage2,info)
+write.csv(table_tnbc_nontnbc_stage2, 'table_ajcc_stage2_probe_ann.csv')
+
+# compare stage3 (TNBC)  to stage 3 (non-TNBC)
+# draw volcano plots for each pairwise comparison
+mypch_ajcc <- c(rep(1,4),rep(2,85),rep(3,87),rep(4,4),rep(5,187),rep(6,137),rep(7,4)) 
+design_ajcc <- model.matrix(~-1+factor(mypch_ajcc))
+colnames(design_ajcc)<- c('Stage1t', 'Stage2t','Stage3t','Stage1n', 'Stage2n','Stage3n','other') #  group labels
+
+top0_ajcc <-  eBayes(contrasts.fit(lmFit(normdata_ajcc, design_ajcc), makeContrasts(Stage3t - Stage3n, levels=design_ajcc))) #compare stage3 of tnbc to stage3 of nontnbc
+top1_stage3 <- topTable(top0_ajcc, coef='Stage3t - Stage3n',adjust='BH',number=22283,sort.by='P')
+
+#upregulated probes in stage 3t
+up.reg_tnbc_ajcc <- top1_stage3 %>%filter(top1_stage3$logFC > 1.5) 
+up.reg_tnbc_ajcc  <- up.reg_tnbc_ajcc %>%filter(up.reg_tnbc_ajcc$ adj.P.Val<0.05)
+names_upreg_tnbc_ajcc <- rownames(up.reg_tnbc_ajcc) #10
+#upregulated probes in stage 3n
+up.reg_nontnbc_ajcc <- top1_stage3%>%filter(top1_stage3 $logFC < -1.5)
+up.reg_nontnbc_ajcc  <- up.reg_nontnbc_ajcc %>%filter(up.reg_nontnbc_ajcc$ adj.P.Val<0.05)
+names_upreg_nontnbc_ajcc <- rownames(up.reg_nontnbc_ajcc) #33
+
+png(file="volcano-TNBC-ajcc-stage3t_vs_stage3n.png",units="px")
+plot(top1_stage3$logFC,-log10(top1_stage3$adj.P.Val), main='Differential Gene Expression \n between TNBC Stage3 and Non-TNBC Stage3', xlab='log2FC(TNBC Stage3/Non-TNBC Stage3)',ylab='-log10(BH P value)', cex=0.5, cex.main=1.2,cex.axis=1, cex.lab=1, pch=21,xlim=c(-2,2))
+text(1.5,40,label='Upregulated in \n TNBC Stage3',cex=1)
+text(-1.5,40,label='Upregulated in \n Non-TNBC Stage3',cex=1)
+abline(v=-1.5, col="red")
+abline(v=1.5, col="red")
+abline(h=1.3, col="green")
+dev.off()
+
+# probes annotation
+dd_stage3 <- subset(top1_stage3, adj.P.Val<0.05 & abs(logFC)>1.5) # subset extreme values
+str(dd_stage3) 
+out_stage3 <- data.frame(xxhuex[rownames(dd_stage3)] ) # search for rownames example
+
+acc_no_stage3 <- NULL # gene ids
+for (i in 1:length(rownames(dd_stage3))){ acc_no_stage3 <- c(acc_no_stage3, out_stage3[, paste0("X", rownames(dd_stage3)[i])]) }
+dd_stage3 <- cbind(acc_no_stage3, dd_stage3) # get probe and gene IDs
+dd_tbl_stage3  <- as.data.table(dd_stage3) # print as table 
+df_stage3 <- data.frame(dd_stage3)
+df_stage3$DGE <- 'AJCC-stage3'
+table_tnbc_nontnbc_stage3 <- subset(df_stage3, select=c('acc_no_stage3','logFC','adj.P.Val'))
+info <- select(hgu133a.db, rownames(table_tnbc_nontnbc_stage3), c("SYMBOL","GENENAME"))
+table_tnbc_nontnbc_stage3 <- cbind(table_tnbc_nontnbc_stage3,info)
+write.csv(table_tnbc_nontnbc_stage3, 'table_ajcc_stage3_probe_ann.csv')
+
+#----------------------------------------------- Ca2+ channel mRNA expression ------------------------------------------
+#ORAI3 expression in TNBC and NonTNBC
+orai3 <- subset(eset2,  rownames(eset2) == '221864_at')
+orai3_tnbc <-subset(orai3,select=c(tnbc$celfiles))
+orai3_tnbc <- t(orai3_tnbc)
+tnbc <- cbind(tnbc,orai3_tnbc)
+x <- tnbc$'221864_at'
+
+orai3 <- subset(eset2,  rownames(eset2) == '221864_at')
+orai3_nontnbc <-subset(orai3,select=c(nontnbc$celfiles))
+orai3_nontnbc <- t(orai3_nontnbc)
+nontnbc <- cbind(nontnbc,orai3_nontnbc)
+y <-nontnbc$'221864_at'
+
+x <- data.frame(tnbc$'221864_at')
+x$groups = 'TNBC'
+names(x)[1] <- "value"
+y <- data.frame(nontnbc$'221864_at')
+y$groups = 'Non-TNBC'
+names(y)[1] <- "value"
+all <- rbind(x,y)
+
+# t test
+group_by(all, groups) %>% summarise(count = n(),mean = mean(value, na.rm = TRUE),sd = sd(value, na.rm = TRUE))
+t.test <- t.test(value ~ groups, data = all)
+means <- aggregate(value ~ groups, all, mean)
+
+png('boxplot_ORAI3_tnbc_nontnbc.png')
+boxplot(value ~ groups, data = all, main = "ORAI3 Expression Value in Breast Cancer Subtypes", xlab = "Subtypes", ylab = "ORAI3 Expression Value", col = c("#00AFBB", "#E7B800"))
+points(1:2, means$value, col = "red") 
+text(1:2, means$value + 0.06, labels = round(means$value,3),cex = 0.9)
+dev.off()
+
+# ORAI3 in TNBC rd and TNBC pcr
+rd_tnbc <- tnbc%>%filter(pcr_rd == 'RD') #113
+pcr_tnbc <- tnbc%>%filter(pcr_rd == 'pCR') #57
+rd_nontnbc <- nontnbc%>%filter(pcr_rd == 'RD') #276
+pcr_nontnbc <- nontnbc%>%filter(pcr_rd == 'pCR') #42
+
+orai3 <- subset(eset2,  rownames(eset2) == '221864_at')
+orai3_tnbc_rd <-subset(orai3,select=c(rd_tnbc$celfiles))
+orai3_tnbc_rd <- t(orai3_tnbc_rd)
+tnbc_rd <- cbind(rd_tnbc,orai3_tnbc_rd)
+orai3_tnbc_rd  <- tnbc_rd$'221864_at'
+
+orai3 <- subset(eset2,  rownames(eset2) == '221864_at')
+orai3_tnbc_pcr <-subset(orai3,select=c(pcr_tnbc$celfiles))
+orai3_tnbc_pcr <- t(orai3_tnbc_pcr)
+tnbc_pcr <- cbind(pcr_tnbc,orai3_tnbc_pcr)
+orai3_tnbc_pcr <- tnbc_pcr$'221864_at'
+
+x <- data.frame(tnbc_rd$'221864_at')
+x$groups = 'RD'
+names(x)[1] <- "value"
+y <- data.frame(tnbc_pcr$'221864_at')
+y$groups = 'pCR'
+names(y)[1] <- "value"
+all <- rbind(x,y)
+
+# t test
+group_by(all, groups) %>% summarise(count = n(),mean = mean(value, na.rm = TRUE),sd = sd(value, na.rm = TRUE))
+t.test <- t.test(value ~ groups, data = all)
+means <- aggregate(value ~ groups, all, mean)
+
+png('boxplot_orai3_tnbc.png')
+boxplot(value ~ groups, data = all, main = "ORAI3 Expression Value in TNBC", xlab = "TNBC", ylab = "ORAI3 Expression Value", col = c("#00AFBB", "#E7B800"))
+points(1:2, means$value, col = "red") 
+text(1:2, means$value + 0.06, labels = round(means$value,3),cex = 0.9)
+dev.off()
+
+# ORAI3 in Non-TNBC rd and Non-TNBC pcr
+orai3_nontnbc_rd <-subset(orai3,select=c(rd_nontnbc$celfiles))
+orai3_nontnbc_rd <- t(orai3_nontnbc_rd)
+nontnbc_rd <- cbind(rd_nontnbc,orai3_nontnbc_rd)
+orai3_nontnbc_rd  <- nontnbc_rd$'221864_at'
+
+orai3_nontnbc_pcr <-subset(orai3,select=c(pcr_nontnbc$celfiles))
+orai3_nontnbc_pcr <- t(orai3_nontnbc_pcr)
+nontnbc_pcr <- cbind(pcr_nontnbc,orai3_nontnbc_pcr)
+orai3_nontnbc_pcr <- nontnbc_pcr$'221864_at'
+
+x <- data.frame(nontnbc_rd$'221864_at')
+x$groups = 'RD'
+names(x)[1] <- "value"
+y <- data.frame(nontnbc_pcr$'221864_at')
+y$groups = 'pCR'
+names(y)[1] <- "value"
+all <- rbind(x,y)
+
+# t test
+group_by(all, groups) %>% summarise(count = n(),mean = mean(value, na.rm = TRUE),sd = sd(value, na.rm = TRUE))
+t.test <- t.test(value ~ groups, data = all)
+means <- aggregate(value ~ groups, all, mean)
+
+png('boxplot_orai3_nontnbc.png')
+boxplot(value ~ groups, data = all, main = "ORAI3 Expression Value in Non-TNBC", xlab = "Non-TNBC", ylab = "ORAI3 Expression Value", col = c("#00AFBB", "#E7B800"))
+points(1:2, means$value, col = "red") 
+text(1:2, means$value + 0.12, labels = round(means$value,3),cex = 0.9)
+dev.off()
+
+# ORAI3 in TNBC rd and Non-TNBC rd
+orai3_tnbc_rd <-subset(orai3,select=c(rd_tnbc$celfiles))
+orai3_tnbc_rd <- t(orai3_tnbc_rd)
+tnbc_rd <- cbind(rd_tnbc,orai3_tnbc_rd)
+orai3_tnbc_rd  <- tnbc_rd$'221864_at'
+
+orai3_nontnbc_rd <-subset(orai3,select=c(rd_nontnbc$celfiles))
+orai3_nontnbc_rd <- t(orai3_nontnbc_rd)
+nontnbc_rd <- cbind(rd_nontnbc,orai3_nontnbc_rd)
+orai3_nontnbc_rd  <- nontnbc_rd$'221864_at'
+
+y <- data.frame(nontnbc_rd$'221864_at')
+y$groups = 'Non-TNBC(RD)'
+names(y)[1] <- "value"
+x <- data.frame(tnbc_rd$'221864_at')
+x$groups = 'TNBC(RD)'
+names(x)[1] <- "value"
+all <- rbind(x,y)
+
+# t test
+group_by(all, groups) %>% summarise(count = n(),mean = mean(value, na.rm = TRUE),sd = sd(value, na.rm = TRUE))
+t.test <- t.test(value ~ groups, data = all)
+means <- aggregate(value ~ groups, all, mean)
+
+png('boxplot_orai3_rd.png')
+boxplot(value ~ groups, data = all, main = "ORAI3 Expression Value in RD groups", xlab = "RD group in different subtypes", ylab = "ORAI3 Expression Value", col = c("#00AFBB", "#E7B800"))
+points(1:2, means$value, col = "red") 
+text(1:2, means$value + 0.06, labels = round(means$value,3),cex = 0.9)
+dev.off()
+
+#--------------- TRPC1 in TNBC rd and TNBC pcr ----------------
+TRPC1 <- subset(eset2,  rownames(eset2) == '205802_at')
+TRPC1_tnbc_rd <-subset(TRPC1,select=c(rd_tnbc$celfiles))
+TRPC1_tnbc_rd <- t(TRPC1_tnbc_rd)
+tnbc_rd <- cbind(rd_tnbc,TRPC1_tnbc_rd)
+#TRPC1_tnbc_rd  <- tnbc_rd$'205802_at'
+
+TRPC1 <- subset(eset2,  rownames(eset2) == '205802_at')
+TRPC1_tnbc_pcr <-subset(TRPC1,select=c(pcr_tnbc$celfiles))
+TRPC1_tnbc_pcr <- t(TRPC1_tnbc_pcr)
+tnbc_pcr <- cbind(pcr_tnbc,TRPC1_tnbc_pcr)
+#TRPC1_tnbc_pcr <- tnbc_pcr$'205802_at'
+
+x <- data.frame(tnbc_rd$'205802_at')
+x$groups = 'RD'
+names(x)[1] <- "value"
+y <- data.frame(tnbc_pcr$'205802_at')
+y$groups = 'pCR'
+names(y)[1] <- "value"
+all <- rbind(x,y)
+
+# t test
+group_by(all, groups) %>% summarise(count = n(),mean = mean(value, na.rm = TRUE),sd = sd(value, na.rm = TRUE))
+t.test <- t.test(value ~ groups, data = all)
+means <- aggregate(value ~ groups, all, mean)
+
+png('boxplot_TRPC1_tnbc.png')
+boxplot(value ~ groups, data = all, main = "TRPC1 Expression Value in TNBC",  xlab = "TNBC", ylab = "TRPC1 Expression Value", col = c("#00AFBB", "#E7B800"))
+points(1:2, means$value, col = "red") 
+text(1:2, means$value + 0.06, labels = round(means$value,3),cex = 0.9)
+dev.off()
+
+#--------------- TRPC5 in TNBC rd and TNBC pcr ----------------
+TRPC5 <- subset(eset2,  rownames(eset2) == '220552_at')
+TRPC5_tnbc_rd <-subset(TRPC5,select=c(rd_tnbc$celfiles))
+TRPC5_tnbc_rd <- t(TRPC5_tnbc_rd)
+tnbc_rd <- cbind(rd_tnbc,TRPC5_tnbc_rd)
+#TRPC5_tnbc_rd  <- tnbc_rd$'220552_at'
+
+TRPC5 <- subset(eset2,  rownames(eset2) == '220552_at')
+TRPC5_tnbc_pcr <-subset(TRPC5,select=c(pcr_tnbc$celfiles))
+TRPC5_tnbc_pcr <- t(TRPC5_tnbc_pcr)
+tnbc_pcr <- cbind(pcr_tnbc,TRPC5_tnbc_pcr)
+#TRPC5_tnbc_pcr <- tnbc_pcr$'220552_at'
+
+x <- data.frame(tnbc_rd$'220552_at')
+x$groups = 'RD'
+names(x)[1] <- "value"
+y <- data.frame(tnbc_pcr$'220552_at')
+y$groups = 'pCR'
+names(y)[1] <- "value"
+all <- rbind(x,y)
+
+# t test
+group_by(all, groups) %>% summarise(count = n(),mean = mean(value, na.rm = TRUE),sd = sd(value, na.rm = TRUE))
+t.test <- t.test(value ~ groups, data = all)
+means <- aggregate(value ~ groups, all, mean)
+
+png('boxplot_TRPC5_tnbc.png')
+boxplot(value ~ groups, data = all, main = "TRPC5 Expression Value in TNBC",  xlab = "TNBC", ylab = "TRPC5 Expression Value", col = c("#00AFBB", "#E7B800"))
+points(1:2, means$value, col = "red") 
+text(1:2, means$value + 0.04, labels = round(means$value,3),cex = 0.9)
+dev.off()
+
+#--------------- TRPC6 in TNBC rd and TNBC pcr ----------------
+TRPC6 <- subset(eset2,  rownames(eset2) == '217287_s_at')
+TRPC6_tnbc_rd <-subset(TRPC6,select=c(rd_tnbc$celfiles))
+TRPC6_tnbc_rd <- t(TRPC6_tnbc_rd)
+tnbc_rd <- cbind(rd_tnbc,TRPC6_tnbc_rd)
+#TRPC6_tnbc_rd  <- tnbc_rd$'220552_at'
+
+TRPC6 <- subset(eset2,  rownames(eset2) == '217287_s_at')
+TRPC6_tnbc_pcr <-subset(TRPC6,select=c(pcr_tnbc$celfiles))
+TRPC6_tnbc_pcr <- t(TRPC6_tnbc_pcr)
+tnbc_pcr <- cbind(pcr_tnbc,TRPC6_tnbc_pcr)
+#TRPC6_tnbc_pcr <- tnbc_pcr$'217287_s_at'
+
+x <- data.frame(tnbc_rd$'217287_s_at')
+x$groups = 'RD'
+names(x)[1] <- "value"
+y <- data.frame(tnbc_pcr$'217287_s_at')
+y$groups = 'pCR'
+names(y)[1] <- "value"
+all <- rbind(x,y)
+
+# t test
+group_by(all, groups) %>% summarise(count = n(),mean = mean(value, na.rm = TRUE),sd = sd(value, na.rm = TRUE))
+t.test <- t.test(value ~ groups, data = all)
+means <- aggregate(value ~ groups, all, mean)
+
+png('boxplot_TRPC6_tnbc.png')
+boxplot(value ~ groups, data = all, main = "TRPC6 Expression Value in TNBC",  xlab = "TNBC", ylab = "TRPC6 Expression Value", col = c("#00AFBB", "#E7B800"))
+points(1:2, means$value, col = "red") 
+text(1:2, means$value + 0.04, labels = round(means$value,3),cex = 0.9)
+dev.off()
+
+#--------------- ORAI2 in TNBC rd and TNBC pcr ----------------
+ORAI2 <- subset(eset2,  rownames(eset2) == '217529_at')
+ORAI2_tnbc_rd <-subset(ORAI2,select=c(rd_tnbc$celfiles))
+ORAI2_tnbc_rd <- t(ORAI2_tnbc_rd)
+tnbc_rd <- cbind(rd_tnbc,ORAI2_tnbc_rd)
+#ORAI2_tnbc_rd  <- tnbc_rd$'220552_at'
+
+ORAI2 <- subset(eset2,  rownames(eset2) == '217529_at')
+ORAI2_tnbc_pcr <-subset(ORAI2,select=c(pcr_tnbc$celfiles))
+ORAI2_tnbc_pcr <- t(ORAI2_tnbc_pcr)
+tnbc_pcr <- cbind(pcr_tnbc,ORAI2_tnbc_pcr)
+#ORAI2_tnbc_pcr <- tnbc_pcr$'220552_at'
+
+x <- data.frame(tnbc_rd$'217529_at')
+x$groups = 'RD'
+names(x)[1] <- "value"
+y <- data.frame(tnbc_pcr$'217529_at')
+y$groups = 'pCR'
+names(y)[1] <- "value"
+all <- rbind(x,y)
+
+# t test
+group_by(all, groups) %>% summarise(count = n(),mean = mean(value, na.rm = TRUE),sd = sd(value, na.rm = TRUE))
+t.test <- t.test(value ~ groups, data = all)
+means <- aggregate(value ~ groups, all, mean)
+
+png('boxplot_ORAI2_tnbc.png')
+boxplot(value ~ groups, data = all, main = "ORAI2 Expression Value in TNBC",  xlab = "TNBC", ylab = "ORAI2 Expression Value", col = c("#00AFBB", "#E7B800"))
+points(1:2, means$value, col = "red") 
+text(1:2, means$value + 0.06, labels = round(means$value,3),cex = 0.9)
+dev.off()
+
+#--------------- STIM1 in TNBC rd and TNBC pcr ----------------
+STIM1 <- subset(eset2,  rownames(eset2) == '202764_at')
+STIM1_tnbc_rd <-subset(STIM1,select=c(rd_tnbc$celfiles))
+STIM1_tnbc_rd <- t(STIM1_tnbc_rd)
+tnbc_rd <- cbind(rd_tnbc,STIM1_tnbc_rd)
+#STIM1_tnbc_rd  <- tnbc_rd$'220552_at'
+
+STIM1 <- subset(eset2,  rownames(eset2) == '202764_at')
+STIM1_tnbc_pcr <-subset(STIM1,select=c(pcr_tnbc$celfiles))
+STIM1_tnbc_pcr <- t(STIM1_tnbc_pcr)
+tnbc_pcr <- cbind(pcr_tnbc,STIM1_tnbc_pcr)
+#STIM1_tnbc_pcr <- tnbc_pcr$'220552_at'
+
+x <- data.frame(tnbc_rd$'202764_at')
+x$groups = 'RD'
+names(x)[1] <- "value"
+y <- data.frame(tnbc_pcr$'202764_at')
+y$groups = 'pCR'
+names(y)[1] <- "value"
+all <- rbind(x,y)
+
+# t test
+group_by(all, groups) %>% summarise(count = n(),mean = mean(value, na.rm = TRUE),sd = sd(value, na.rm = TRUE))
+t.test <- t.test(value ~ groups, data = all)
+means <- aggregate(value ~ groups, all, mean)
+
+png('boxplot_STIM1_tnbc.png')
+boxplot(value ~ groups, data = all, main = "STIM1 Expression Value in TNBC",  xlab = "TNBC", ylab = "STIM1 Expression Value", col = c("#00AFBB", "#E7B800"))
+points(1:2, means$value, col = "red") 
+text(1:2, means$value + 0.04, labels = round(means$value,3),cex = 0.9)
+dev.off()
+
+#--------------- TRPV6 in TNBC rd and TNBC pcr ----------------
+TRPV6 <- subset(eset2,  rownames(eset2) == '206827_s_at')
+TRPV6_tnbc_rd <-subset(TRPV6,select=c(rd_tnbc$celfiles))
+TRPV6_tnbc_rd <- t(TRPV6_tnbc_rd)
+tnbc_rd <- cbind(rd_tnbc,TRPV6_tnbc_rd)
+#TRPV6_tnbc_rd  <- tnbc_rd$'206827_s_at'
+
+TRPV6 <- subset(eset2,  rownames(eset2) == '206827_s_at')
+TRPV6_tnbc_pcr <-subset(TRPV6,select=c(pcr_tnbc$celfiles))
+TRPV6_tnbc_pcr <- t(TRPV6_tnbc_pcr)
+tnbc_pcr <- cbind(pcr_tnbc,TRPV6_tnbc_pcr)
+#TRPV6_tnbc_pcr <- tnbc_pcr$'206827_s_at'
+
+x <- data.frame(tnbc_rd$'206827_s_at')
+x$groups = 'RD'
+names(x)[1] <- "value"
+y <- data.frame(tnbc_pcr$'206827_s_at')
+y$groups = 'pCR'
+names(y)[1] <- "value"
+all <- rbind(x,y)
+
+# t test
+group_by(all, groups) %>% summarise(count = n(),mean = mean(value, na.rm = TRUE),sd = sd(value, na.rm = TRUE))
+t.test <- t.test(value ~ groups, data = all)
+means <- aggregate(value ~ groups, all, mean)
+
+#--------------- CACNA1D in TNBC rd and TNBC pcr ----------------
+CACNA1D <- subset(eset2,  rownames(eset2) == '210108_at')
+CACNA1D_tnbc_rd <-subset(CACNA1D,select=c(rd_tnbc$celfiles))
+CACNA1D_tnbc_rd <- t(CACNA1D_tnbc_rd)
+tnbc_rd <- cbind(rd_tnbc,CACNA1D_tnbc_rd)
+#CACNA1D_tnbc_rd  <- tnbc_rd$'210108_at'
+
+CACNA1D <- subset(eset2,  rownames(eset2) == '210108_at')
+CACNA1D_tnbc_pcr <-subset(CACNA1D,select=c(pcr_tnbc$celfiles))
+CACNA1D_tnbc_pcr <- t(CACNA1D_tnbc_pcr)
+tnbc_pcr <- cbind(pcr_tnbc,CACNA1D_tnbc_pcr)
+#CACNA1D_tnbc_pcr <- tnbc_pcr$'210108_at'
+
+x <- data.frame(tnbc_rd$'210108_at')
+x$groups = 'RD'
+names(x)[1] <- "value"
+y <- data.frame(tnbc_pcr$'210108_at')
+y$groups = 'pCR'
+names(y)[1] <- "value"
+all <- rbind(x,y)
+
+# t test
+group_by(all, groups) %>% summarise(count = n(),mean = mean(value, na.rm = TRUE),sd = sd(value, na.rm = TRUE))
+t.test <- t.test(value ~ groups, data = all)
+means <- aggregate(value ~ groups, all, mean)
+
+#--------------- CACNA1G in TNBC rd and TNBC pcr ----------------
+CACNA1G <- subset(eset2,  rownames(eset2) == '211314_at')
+CACNA1G_tnbc_rd <-subset(CACNA1G,select=c(rd_tnbc$celfiles))
+CACNA1G_tnbc_rd <- t(CACNA1G_tnbc_rd)
+tnbc_rd <- cbind(rd_tnbc,CACNA1G_tnbc_rd)
+#CACNA1G_tnbc_rd  <- tnbc_rd$'211314_at'
+
+CACNA1G <- subset(eset2,  rownames(eset2) == '211314_at')
+CACNA1G_tnbc_pcr <-subset(CACNA1G,select=c(pcr_tnbc$celfiles))
+CACNA1G_tnbc_pcr <- t(CACNA1G_tnbc_pcr)
+tnbc_pcr <- cbind(pcr_tnbc,CACNA1G_tnbc_pcr)
+#CACNA1G_tnbc_pcr <- tnbc_pcr$'211314_at'
+
+x <- data.frame(tnbc_rd$'211314_at')
+x$groups = 'RD'
+names(x)[1] <- "value"
+y <- data.frame(tnbc_pcr$'211314_at')
+y$groups = 'pCR'
+names(y)[1] <- "value"
+all <- rbind(x,y)
+
+# t test
+group_by(all, groups) %>% summarise(count = n(),mean = mean(value, na.rm = TRUE),sd = sd(value, na.rm = TRUE))
+t.test <- t.test(value ~ groups, data = all)
+means <- aggregate(value ~ groups, all, mean)
+
+#--------------- CACNA1H in TNBC rd and TNBC pcr ----------------
+CACNA1H <- subset(eset2,  rownames(eset2) == '205845_at')
+CACNA1H_tnbc_rd <-subset(CACNA1H,select=c(rd_tnbc$celfiles))
+CACNA1H_tnbc_rd <- t(CACNA1H_tnbc_rd)
+tnbc_rd <- cbind(rd_tnbc,CACNA1H_tnbc_rd)
+#CACNA1H_tnbc_rd  <- tnbc_rd$'205845_at'
+
+CACNA1H <- subset(eset2,  rownames(eset2) == '205845_at')
+CACNA1H_tnbc_pcr <-subset(CACNA1H,select=c(pcr_tnbc$celfiles))
+CACNA1H_tnbc_pcr <- t(CACNA1H_tnbc_pcr)
+tnbc_pcr <- cbind(pcr_tnbc,CACNA1H_tnbc_pcr)
+#CACNA1H_tnbc_pcr <- tnbc_pcr$'205845_at'
+
+x <- data.frame(tnbc_rd$'205845_at')
+x$groups = 'RD'
+names(x)[1] <- "value"
+y <- data.frame(tnbc_pcr$'205845_at')
+y$groups = 'pCR'
+names(y)[1] <- "value"
+all <- rbind(x,y)
+
+# t test
+group_by(all, groups) %>% summarise(count = n(),mean = mean(value, na.rm = TRUE),sd = sd(value, na.rm = TRUE))
+t.test <- t.test(value ~ groups, data = all)
+means <- aggregate(value ~ groups, all, mean)
+
+#--------------- CACNA1I in TNBC rd and TNBC pcr ----------------
+CACNA1I <- subset(eset2,  rownames(eset2) == '208299_at')
+CACNA1I_tnbc_rd <-subset(CACNA1I,select=c(rd_tnbc$celfiles))
+CACNA1I_tnbc_rd <- t(CACNA1I_tnbc_rd)
+tnbc_rd <- cbind(rd_tnbc,CACNA1I_tnbc_rd)
+#CACNA1I_tnbc_rd  <- tnbc_rd$'208299_at'
+
+CACNA1I <- subset(eset2,  rownames(eset2) == '208299_at')
+CACNA1I_tnbc_pcr <-subset(CACNA1I,select=c(pcr_tnbc$celfiles))
+CACNA1I_tnbc_pcr <- t(CACNA1I_tnbc_pcr)
+tnbc_pcr <- cbind(pcr_tnbc,CACNA1I_tnbc_pcr)
+#CACNA1I_tnbc_pcr <- tnbc_pcr$'208299_at'
+
+x <- data.frame(tnbc_rd$'208299_at')
+x$groups = 'RD'
+names(x)[1] <- "value"
+y <- data.frame(tnbc_pcr$'208299_at')
+y$groups = 'pCR'
+names(y)[1] <- "value"
+all <- rbind(x,y)
+
+# t test
+group_by(all, groups) %>% summarise(count = n(),mean = mean(value, na.rm = TRUE),sd = sd(value, na.rm = TRUE))
+t.test <- t.test(value ~ groups, data = all)
+means <- aggregate(value ~ groups, all, mean)
