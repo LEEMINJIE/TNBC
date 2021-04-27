@@ -275,7 +275,7 @@ dev.off()
 #----------------------------------------------- DGE analysis (based on patient response) ------------------------------------------
 
 # DGE analysis of TNBC vs non-TNBC
-# do volcano plots for each pairwise comparison
+# volcano plots for each pairwise comparison
 library(limma) # check limma is working, use install.packages(“limma”) if it is not 
 mypch2_tnbc_nontnbc <- c(rep(1,178),rep(2,330)) # 1:330 in mydata_tnbc_nontnbc= non-TNBC , 331:508 = TNBC 
 design_tnbc_nontnbc <- model.matrix(~-1+factor(mypch2_tnbc_nontnbc))
