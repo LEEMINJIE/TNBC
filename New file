@@ -1,0 +1,365 @@
+
+BiocManager::install(version="3.12") 	# BiocManager v1.30.10 # do once
+library(BiocManager)
+BiocManager::version() 			# check the version
+
+#BiocManager::install(c("affyio", "affy", "limma", "oligo"), ask=F) # run every time
+# This may be slow because of the large number of dependencies
+library(affy)              # activate library, run every time
+library(affyio)            # activate library, run every time
+library(oligo)             # activate library, run every time
+library(limma)             # activate library, run every time
+
+#BiocManager::install(c("GEOquery"), ask=F)
+library(GEOquery)
+#BiocManager::install(c("Biobase"), ask=F)
+library(Biobase)
+#BiocManager::install(c("knitr"), ask=F)
+library(knitr)
+#BiocManager::install(c("simpleaffy"), ask=F)
+library(simpleaffy)
+#BiocManager::install(c("GenomicRanges"), ask=F)
+library(GenomicRanges)
+#BiocManager::install(c("Organism.dplyr"), ask=F)
+library(Organism.dplyr)
+#BiocManager::install(c("illuminaio"), ask=F)
+library(illuminaio)
+#install.packages("XML", ask=F)
+library(XML)
+#install.packages("statmod", ask=F)
+library(statmod)
+#install.packages("cgdsr", ask=F)
+library(cgdsr)
+#install.packages("R2HTML", ask=F)
+library(R2HTML)
+#install.packages("hash", ask=F)
+library(hash)
+#install.packages("ggplot2", ask=F)
+library(ggplot2)
+#install.packages("ggrepel", ask=F)
+library(ggrepel)
+#install.packages("gplots", ask=F)
+library(gplots)
+#install.packages("heatmap.plus", ask=F)
+library(heatmap.plus)
+#install.packages("beeswarm", ask=F)
+library(beeswarm)
+#install.packages("xtable", ask=F) # let this re-start, hit "yes"
+library(xtable)
+#install.packages("rmarkdown")  # let this re-start, hit "yes"
+library(rmarkdown)
+#install.packages("Hmisc")
+library(Hmisc)
+#install_github("kassambara/factoextra")
+library("factoextra")
+#if (!require(devtools)) install.packages("devtools")
+#devtools::install_github("yanlinlin82/ggvenn")
+library(ggvenn)
+library("ggpubr")
+
+sessionInfo() # to check versions
+
+library(biomaRt) # biomaRt v2.46.2 # 
+citation("biomaRt")
+#BiocManager::install("hgu133a.db", ask=F) # hgu133a.db v3.2.3
+library(hgu133a.db) # https://bioconductor.org/packages/release/data/annotation/html/hgu133a.db.html
+citation("hgu133a.db")
+#BiocManager::install("huex10sttranscriptcluster.db", ask=F)  
+library(huex10sttranscriptcluster.db)
+library(data.table)
+#install.packages("gridExtra")
+library(gridExtra)
+
+huex <- contents(hgu133aACCNUM)
+length(huex) # list of 22,283 of linked probes and genes
+mapped_probes <- mappedkeys(huex) # Convert to a list
+xxhuex <- as.list(huex[mapped_probes]) # compare mapped probes # 22,283 elements
+
+##write csv file for GSE25066 dataset
+geo <- getGEO("GSE25066",GSEMatrix=TRUE,getGPL=FALSE)
+if (length(geo) > 1) idx <- grep("GPL96", attr(geo, "names")) else idx <- 1
+expression.set <- geo[[idx]]
+str(expression.set)
+
+expression.set2 <- exprs(expression.set) #show as matrix
+str(expression.set2)
+head(expression.set2)
+
+data <- pData(expression.set)[,] #dataframe with 508 rows and 80 columns
+write.csv(x=data, file="GSE25066.csv") # dataframe is saved as csv file in the CELFILES directory
+
+##Part 2 - QC
+names <- 1:508
+
+#read data
+data <- read.csv("GSE25066.csv")
+colnames(data)
+data = subset(data, select = -c(X)) # remove the first column
+celfiles <- list.files(getwd(), pattern="CEL") # get all celfiles name 
+data$celfiles= celfiles # add a column called “celfiles” to the dataframe
+ 
+#might be useful for allocating the subtypes
+sample.no. <- data[,2] 			# accession number
+pam50_class<- data[,71] 			# pam50_class 
+nodal_status <- data[,59] 	   		# clinical_nodal_status.ch1
+pcr_rd <- data[,72]				 #pathologic_response_pcr_rd:ch1
+rcb <- data[,73] 				# pathologic_response_rcb_class:ch1 (residual cancer burden)
+her2.status <- data[,70] 			# her2_status:ch1
+er.status <- data[,65]				 # er_status_ihc:ch1
+pr.status  <- data[,74] 				# pr_status_ihc:ch1
+er_status_ihc <- data[,64] 			#er_status_ihc_esr1_for.indeterminate.ch1
+erbb2_status <-  data[,66] 			#erbb2_status.ch1
+clinical_t_stage  <- data[,60] 			#"clinical_t_stage.ch1"     
+ajcc <- data[,58]				#"clinical_ajcc_stage.ch1"  
+grade   <- data[,69] 				# grade.ch1
+ggi_class <- data[,68]				# ggi_class.ch1
+set_class <- data[,77]				#set_class.ch1
+rcb_prediction <- data[,75]			# rcb_0_i_prediction.ch1
+chemosensitivity.prediction <- data[,57] 	#chemosensitivity_prediction:ch1
+dlda30  <- data[,61] 				#dlda30_prediction:ch1
+drfs <- data[,62]				#drfs_1_event_0_censored.ch1 (distance relapse free survival)
+						#censoring status; 0=censored, 1=event.
+drfs_years <- data[,63]			# drfs_even_time_years.ch1
+celfiles  <- data[,81]                                        # each celfies 
+
+# make a smaller dataframe (sdata) with only some metadata are included
+sdata <- data.frame(sample.no., her2.status, er.status, pr.status,er_status_ihc, erbb2_status, ajcc, nodal_status,set_class, rcb_prediction, chemosensitivity.prediction, pcr_rd, rcb, clinical_t_stage, grade,drfs_years ,celfiles) 
+
+DGE analysis of TNBC vs non-TNBC
+#filter out TNBC subtype 
+tnbc <- sdata %>% filter(her2.status == "N", er.status == "N", pr.status == "N") # filter out TNBC subtypes
+dim(tnbc) # check the total number of tnbc (should be 178)
+tnbc <- tnbc[order(tnbc$pcr_rd),] # sort groups in response to pcr / rd
+tnbc$subtypes = 'TNBC'
+
+# remove tnbc from the dataframe
+remove <- tnbc$sample.no.
+sdatawithouttnbc <- sdata[!sdata$sample.no.%in%remove,] #remove tnbc from the dataframe
+data2 <- sdatawithouttnbc
+data2$subtypes = 'non-TNBC'
+nontnbc <- data2
+
+#merge tnbc with the sorted dataframe
+mydata_tnbc_nontnbc <- rbind(tnbc,nontnbc)
+
+#rawdata
+rawdata_tnbc_nontnbc  <- read.celfiles(mydata_tnbc_nontnbc$celfiles)
+eset <-exprs(rawdata_tnbc_nontnbc)
+length(rownames(eset)) #506944 probes
+
+# draw heatmap of raw data
+png(file="rawheatmap-all.png", width=2000, height=2000, units="px")
+heatmap(eset[1:100,], Colv=as.dendrogram(hclust(dist(t(eset)))), cexRow=2, cexCol=2, labCol = names, labRow = c(), margins=c(42,8))
+dev.off() 
+# draw boxplot of raw data expression levels
+png(file="rawboxplot-all.png", width=1200, height=1200, units="px")
+boxplot(log2(eset), las=2, ylab='log2 of expression level', names=names, col="red", margins = c(10, 10), cex=1)
+dev.off() # log2 here because no transformation completed
+
+#normalise the rawdata
+normdata_tnbc_nontnbc <-rma(rawdata_tnbc_nontnbc )
+eset2 <-exprs(normdata_tnbc_nontnbc)
+length(rownames(eset2)) #22283 probes
+
+# do volcano plots for each pairwise comparison
+library(limma) # check limma is working, use install.packages(“limma”) if it is not 
+mypch2_tnbc_nontnbc <- c(rep(1,178),rep(2,330)) # 1:330 in mydata_tnbc_nontnbc= non-TNBC , 331:508 = TNBC 
+design_tnbc_nontnbc <- model.matrix(~-1+factor(mypch2_tnbc_nontnbc))
+colnames(design_tnbc_nontnbc )<- c('T', 'N') #  group labels
+top0_tnbc_nontnbc <-  eBayes(contrasts.fit(lmFit(normdata_tnbc_nontnbc, design_tnbc_nontnbc), makeContrasts(T - N, levels=design_tnbc_nontnbc)))
+length(rownames(eset2))
+top1_tnbc_nontnbc <- topTable(top0_tnbc_nontnbc, coef='T - N',adjust='BH',number=22283,sort.by='P')
+
+#upregulated probes in non-TNBC
+up.reg1_tnbc_nontnbc  <- top1_tnbc_nontnbc%>%filter(top1_tnbc_nontnbc$logFC < -1.5)
+up.reg1_tnbc_nontnbc  <- up.reg1_tnbc_nontnbc %>%filter(up.reg1_tnbc_nontnbc$ adj.P.Val < 0.05)
+names_upreg_nontnbc <- rownames(up.reg1_tnbc_nontnbc) #31 probes
+up.reg2_tnbc_nontnbc <- top1_tnbc_nontnbc%>%filter(top1_tnbc_nontnbc$logFC > 1.5) #upregulated probes inTNBC
+up.reg2_tnbc_nontnbc <- up.reg2_tnbc_nontnbc%>%filter(up.reg2_tnbc_nontnbc$ adj.P.Val  <0.05)
+names_upreg_tnbc <- rownames(up.reg2_tnbc_nontnbc) #9 probes
+
+png(file="volcano-TNBC_vs_non-TNBC.png",units="px")
+plot(top1_tnbc_nontnbc$logFC,-log10(top1_tnbc_nontnbc$adj.P.Val), main='Differential Gene Expression between TNBC and Non-TNBC Subtypes', xlab='log2FC(TNBC/Non-TNBC)',ylab='-log10(BH P value)', cex=0.5, cex.main=1,cex.axis=1, cex.lab=1, pch=21,xlim=c(-2,2))
+text(1.5,70,label='Upregulated in \nTNBC',cex=1)
+text(-1.5,70,label='Upregulated in \nNon-TNBC',cex=1)
+abline(v=-1.5, col="red")
+abline(v=1.5, col="red")
+abline(h=1.3, col="green")
+dev.off()
+
+DGE analysis of TNBC(RD) vs non-TNBC(RD)
+#filter out TNBC subtype (RD)
+rd_tnbc <- tnbc%>%filter(pcr_rd == 'RD') #113
+pcr_tnbc <- tnbc%>%filter(pcr_rd == 'pCR') #57
+rd_data2 <- data2%>%filter(pcr_rd == 'RD') #276
+pcr_data2 <- data2%>%filter(pcr_rd == 'pCR') #42
+mydata_rd_pcr_tnbc_nontnbc <- rbind(rd_tnbc,pcr_tnbc,rd_data2,pcr_data2)
+other <- sdata[!sdata$sample.no.%in%mydata_rd_pcr_tnbc_nontnbc$sample.no.,] #20
+other$subtypes <- 'other'
+
+mydata_rd_pcr_tnbc_nontnbc <- rbind(rd_tnbc,pcr_tnbc,rd_data2,pcr_data2,other)
+rawdata_rd_pcr_tnbc_nontnbc <- read.celfiles(mydata_rd_pcr_tnbc_nontnbc$celfiles)
+normdata_rd_pcr_tnbc_nontnbc <-rma(rawdata_rd_pcr_tnbc_nontnbc) 
+
+# do volcano plots for each pairwise comparison
+mypch2_rd_pcr_tnbc_nontnbc <- c(rep(1,113),rep(2,57),rep(3,276),rep(4,42),rep(5,20))	
+design_rd_pcr_tnbc_nontnbc <- model.matrix(~-1+factor(mypch2_rd_pcr_tnbc_nontnbc))
+colnames(design_rd_pcr_tnbc_nontnbc)<- c('T.rd', 'T.pcr','N.rd', 'N.pcr','other') 
+
+top0_rd_tnbc_nontnbc <-  eBayes(contrasts.fit(lmFit(normdata_rd_pcr_tnbc_nontnbc, design_rd_pcr_tnbc_nontnbc), makeContrasts(T.rd - N.rd, levels=design_rd_pcr_tnbc_nontnbc)))
+top1_rd_tnbc_nontnbc <- topTable(top0_rd_tnbc_nontnbc, coef='T.rd - N.rd',adjust='BH',number=22283,sort.by='P') 
+
+#upregulated probe_id in non-TNBC(RD)
+up.reg1_rd_tnbc_nontnbc  <- top1_rd_tnbc_nontnbc%>%filter(top1_rd_tnbc_nontnbc$logFC < -1.5)
+up.reg1_rd_tnbc_nontnbc <- up.reg1_rd_tnbc_nontnbc%>%filter(up.reg1_rd_tnbc_nontnbc$ adj.P.Val <0.05)
+names_upreg_rd_nontnbc<- rownames(up.reg1_rd_tnbc_nontnbc)
+length(names_upreg_rd_nontnbc) #34
+#upregulated probe_id in TNBC(RD)
+up.reg2_rd_tnbc_nontnbc  <- top1_rd_tnbc_nontnbc%>%filter(top1_rd_tnbc_nontnbc$logFC > 1.5)
+up.reg2_rd_tnbc_nontnbc  <- up.reg2_rd_tnbc_nontnbc%>%filter(up.reg2_rd_tnbc_nontnbc$ adj.P.Val <0.05)
+names_upreg_rd_tnbc <- rownames(up.reg2_rd_tnbc_nontnbc)
+length(names_upreg_rd_tnbc)  #9
+
+png(file="volcano-TNBC(RD)_vs_non-TNBC(RD).png",units="px")
+plot(top1_rd_tnbc_nontnbc$logFC,-log10(top1_rd_tnbc_nontnbc$adj.P.Val), main= 'Differential Gene Expression \n between TNBC (RD) and Non-TNBC Subtypes (RD)', xlab='log2FC(TNBC(RD)/Non-TNBC(RD))', ylab='-log10(BH P value)', cex=0.5, cex.main=1,cex.axis=1, cex.lab=1, pch=21,xlim=c(-2,2))
+text(1.5,50,label='Upregulated in \n TNBC(RD)',cex=1)
+text(-1.3,50,label='Upregulated in \n Non-TNBC(RD)',cex=1)
+abline(v=1.5, col="red")
+abline(v=-1.5, col="red")
+abline(h=1.3, col="green")
+dev.off()
+
+##DGE analysis of TNBC(pCR) vs non-TNBC(pCR)
+# do volcano plots for each pairwise comparison
+mypch2_rd_pcr_tnbc_nontnbc <- c(rep(1,113),rep(2,57),rep(3,276),rep(4,42),rep(5,20))	
+design_rd_pcr_tnbc_nontnbc <- model.matrix(~-1+factor(mypch2_rd_pcr_tnbc_nontnbc))
+colnames(design_rd_pcr_tnbc_nontnbc)<- c('T.rd', 'T.pcr','N.rd', 'N.pcr','other') 
+
+top0_pcr_tnbc_nontnbc <-  eBayes(contrasts.fit(lmFit(normdata_rd_pcr_tnbc_nontnbc, design_rd_pcr_tnbc_nontnbc), makeContrasts(T.pcr - N.pcr, levels=design_rd_pcr_tnbc_nontnbc)))
+top1_pcr_tnbc_nontnbc <- topTable(top0_pcr_tnbc_nontnbc, coef='T.pcr - N.pcr',adjust='BH',number=22283,sort.by='P') 
+
+#upregulated probe_id in non-TNBC(pCR)
+up.reg1_pcr_tnbc_nontnbc <- top1_pcr_tnbc_nontnbc%>%filter(top1_pcr_tnbc_nontnbc$logFC < -1.5)
+up.reg1_pcr_tnbc_nontnbc <- up.reg1_pcr_tnbc_nontnbc%>%filter(up.reg1_pcr_tnbc_nontnbc$ adj.P.Val <0.05)
+names_pcr_nontnbc  <- rownames(up.reg1_pcr_tnbc_nontnbc)
+length(names_pcr_nontnbc) #12
+#upregulated probe_id inTNBC(pCR)
+up.reg2_pcr_tnbc_nontnbc <- top1_pcr_tnbc_nontnbc%>%filter(top1_pcr_tnbc_nontnbc$logFC > 1.5)
+up.reg2_pcr_tnbc_nontnbc <- up.reg2_pcr_tnbc_nontnbc%>%filter(up.reg2_pcr_tnbc_nontnbc$ adj.P.Val<0.05)
+names_pcr_tnbc <- rownames(up.reg2_pcr_tnbc_nontnbc)
+length(names_pcr_tnbc) #3
+
+png(file="volcano-TNBC(pCR)_vs_non-TNBC(pCR).png",units="px")
+plot(top1_pcr_tnbc_nontnbc$logFC,-log10(top1_pcr_tnbc_nontnbc$adj.P.Val), main= 'Differential Gene Expression \n between TNBC (pCR) and Non-TNBC Subtypes (pCR)', xlab='log2FC(TNBC(pCR)/Non-TNBC(pCR))', ylab='-log10(BH P value)', cex=0.5, cex.main=1.2,cex.axis=1, cex.lab=1, pch=21,xlim=c(-2,2))
+text(1.5,10,label='Upregulated in \n TNBC(pCR)',cex=1)
+text(-1.3,10,label='Upregulated in \n non-TNBC(pCR)',cex=1)
+abline(v=1.5, col="red")
+abline(v=-1.5, col="red")
+abline(h=1.3, col="green")
+dev.off()
+
+##DGE analysis of TNBC(RD) vs TNBC(pCR)
+# do volcano plots for each pairwise comparison
+mypch2_rd_pcr_tnbc_nontnbc <- c(rep(1,113),rep(2,57),rep(3,276),rep(4,42),rep(5,20))	
+design_rd_pcr_tnbc_nontnbc <- model.matrix(~-1+factor(mypch2_rd_pcr_tnbc_nontnbc))
+colnames(design_rd_pcr_tnbc_nontnbc)<- c('T.rd', 'T.pcr','N.rd', 'N.pcr','other') 
+
+top0_tnbc_response <-  eBayes(contrasts.fit(lmFit(normdata_rd_pcr_tnbc_nontnbc, design_rd_pcr_tnbc_nontnbc), makeContrasts(T.rd - T.pcr, levels=design_rd_pcr_tnbc_nontnbc)))
+top1_tnbc_response <- topTable(top0_tnbc_response, coef='T.rd - T.pcr',adjust='BH',number=22283,sort.by='P') 
+
+#upregulated probes in TNBC(RD)
+up.reg1_tnbc_response <- top1_tnbc_response%>%filter(top1_tnbc_response$ adj.P.Val <0.05)
+up.reg1_tnbc_response<- up.reg1_tnbc_response%>%filter(up.reg1_tnbc_response$logFC > 1.5)
+names_upreg_tnbc_rd <- rownames(up.reg1_tnbc_response)
+#upregulated probes in TNBC(pCR)
+up.reg2_tnbc_response <- top1_tnbc_response%>%filter(top1_tnbc_response$ adj.P.Val<0.05)
+up.reg2_tnbc_response<- up.reg2_tnbc_response%>%filter(up.reg2_tnbc_response$logFC < -1.5)
+names_upreg_tnbc_pcr <- rownames(up.reg2_tnbc_response)
+
+png(file="volcano-TNBC(RD)_vs_TNBC(pCR).png",units="px")
+plot(top1_tnbc_response$logFC,-log10(top1_tnbc_response$adj.P.Val),main= 'Differential Gene Expression between TNBC (RD) and TNBC (pCR)', xlab='log2FC(TNBC-rd/TNBC-pCR)', ylab='-log10(BH P value)', cex=0.5, cex.main=1, cex.axis=1, cex.lab=1, pch=21,xlim=c(-2,2))
+text(1.5,3,label='Upregulated in \n TNBC(RD)',cex=1)
+text(-1.5,3,label='Upregulated in \n TNBC(pCR)',cex=1)
+abline(v=1.5, col="red")
+abline(v=-1.5, col="red")
+abline(h=1.3, col="green")
+dev.off()
+
+##DGE analysis of non-TNBC(RD) vs non-TNBC(pCR)
+# do volcano plots for each pairwise comparison
+mypch2_rd_pcr_tnbc_nontnbc <- c(rep(1,113),rep(2,57),rep(3,276),rep(4,42),rep(5,20))	
+design_rd_pcr_tnbc_nontnbc <- model.matrix(~-1+factor(mypch2_rd_pcr_tnbc_nontnbc))
+colnames(design_rd_pcr_tnbc_nontnbc)<- c('T.rd', 'T.pcr','N.rd', 'N.pcr','other') 
+
+top0_nontnbc_response <-  eBayes(contrasts.fit(lmFit(normdata_rd_pcr_tnbc_nontnbc, design_rd_pcr_tnbc_nontnbc), makeContrasts(N.rd - N.pcr, levels=design_rd_pcr_tnbc_nontnbc)))
+top1_nontnbc_response <- topTable(top0_nontnbc_response, coef='N.rd - N.pcr',adjust='BH',number=22283,sort.by='P') 
+
+#upregulated probe_id in non-TNBC(RD)
+up.reg1_nontnbc_response  <- top1_nontnbc_response %>%filter(top1_nontnbc_response$logFC < -1.5)
+up.reg1_nontnbc_response  <-  up.reg1_nontnbc_response%>%filter(up.reg1_nontnbc_response$adj.P.Val <0.05)
+names_upreg_rd_nonTNBC <- rownames(up.reg1_nontnbc_response)
+length(names_upreg_rd_nonTNBC) #0
+#upregulated probe_id in non-TNBC(pCR)
+up.reg2_nontnbc_response  <- top1_nontnbc_response %>%filter(top1_nontnbc_response$logFC > 1.5)
+up.reg2_nontnbc_response  <- up.reg2_nontnbc_response%>%filter(up.reg2_nontnbc_response $ adj.P.Val) <0.05)
+names_upreg_pcr_nonTNBC <- rownames(up.reg2_nontnbc_response)
+length(names_upreg_pcr_nonTNBC) #1
+
+png(file="volcano-nonTNBC(RD)_vs_nonTNBC(pCR).png",units="px")
+plot(top1_nontnbc_response$logFC,-log10(top1_nontnbc_response$adj.P.Val), main= 'Differential Gene Expression \n between Non-TNBC (RD) and Non-TNBC (pCR)', xlab='log2FC(non-TNBC(RD)/non-TNBC(pCR))', ylab='-log10(BH P value)', cex=0.5,cex.main=1.2, cex.axis=1, cex.lab=1, pch=21,xlim=c(-2,2))
+text(1.5,6.6,label='Upregulated in \n Non-TNBC(RD)',cex=0.9)
+text(-1.5,6.6,label='Upregulated in \n Non-TNBC(pCR)',cex=0.9)
+abline(v=1.5, col="red")
+abline(v=-1.5, col="red")
+abline(h=1.3, col="green")
+dev.off()
+
+##DGE analysis of lumA(RD) vs lumA(pCR)
+lumA <- sdata %>% filter(er.status == "P", pr.status == "P", her2.status == "N") # filter out lumA subtypes
+dim(lumA) # check the total number of lumA (216)
+
+PNN <- sdata %>% filter(er.status == "P", pr.status == "N", her2.status == "N") # filter out subtypes
+dim(PNN) # check the total number of PNN (72)
+NPN <- sdata %>% filter(er.status == "N", pr.status == "P", her2.status == "N") # filter out subtypes
+dim(NPN) # check the total number of NPN (17)
+int1 <- sdata %>% filter(er.status == "I", er_status_ihc == "P", erbb2_status == "N") 
+int2 <- sdata %>% filter(er.status == "I", er_status_ihc == "N", erbb2_status == "N")
+lumA <-rbind(lumA,PNN,NPN,int1,int2)
+lumA$subtypes = 'lumA'
+lumA <- lumA[order(lumA$pcr_rd),]   # sort groups in response to pcr / rd
+
+rd_lumA <- lumA%>%filter(pcr_rd == 'RD') #261
+pcr_lumA <- lumA%>%filter(pcr_rd  == 'pCR') #37
+lumA_response <- rbind(rd_lumA, pcr_lumA)
+other <- sdata[!sdata$sample.no.%in%lumA_response$sample.no.,]   #210 samples
+other$subtypes <- 'other'
+
+lumA_response <- rbind(rd_lumA, pcr_lumA,other) #508 samples
+rawdata_lumA_response  <- read.celfiles(lumA_response$celfiles) 
+normdata_lumA_response<-rma(rawdata_lumA_response)
+
+mypch2_lumA_response <- c(rep(1,261),rep(2,37),rep(3,210))	 
+design_lumA_response<- model.matrix(~-1+factor(mypch2_lumA_response))
+colnames(design_lumA_response)<- c('rd', 'pcr','o')  #  group labels
+top0_lumA_response<- eBayes(contrasts.fit(lmFit(normdata_lumA_response, design_lumA_response), makeContrasts(rd - pcr, levels=design_lumA_response)))
+top1_lumA_response<- topTable(top0_lumA_response, coef='rd - pcr',adjust='BH',number=22283,sort.by='P') 
+
+#upregulated probes in lumA(RD) #no significant probe
+up.reg1_lumA_response <- top1_lumA_response%>%filter(top1_lumA_response$adj.P.Val <0.05)
+up.reg1_lumA_response <- up.reg1_lumA_response%>%filter(up.reg1_lumA_response$logFC > 1.5)
+names_upreg_lumA_rd <- rownames(up.reg1_lumA_response)
+#upregulated probes in lumA(pCR)
+up.reg2_lumA_response <- top1_lumA_response%>%filter(top1_lumA_response$adj.P.Val<0.05)
+up.reg2_lumA_response <- up.reg2_lumA_response%>%filter(up.reg2_lumA_response$logFC < -1.5)
+names_upreg_lumA_pcr <- rownames(up.reg2_lumA_response)
+
+png(file="volcano-lumA(RD)_vs_lumA(pCR).png", units="px")
+plot(top1_lumA_response$logFC,-log10(top1_lumA_response$adj.P.Val), main= 'Differential Gene Expression \n  between LumA(RD) and LumA(pCR)',xlab='log2FC(LumA(RD)/LumA(pCR))', ylab='-log10(BH P value)', cex=0.5, ,cex.main=1.2, cex.axis=1, cex.lab=1, pch=21,xlim=c(-2,2))
+text(1.5,6,label='Upregulated in \n LumA(RD)',cex=1)
+text(-1.5,6,label='Upregulated in \n LumA(pCR)',cex=1)
+abline(v=1.5, col="red")
+abline(v=-1.5, col="red")
+abline(h=1.3, col="green")
+dev.off()
+
+
