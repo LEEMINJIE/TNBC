@@ -272,7 +272,7 @@ plot(pca_proc1$x[,2], pca_proc1$x[,4], col=mycol, pch=mypch,  xlab=paste0("PC2: 
 legend("topleft", col=unique(mycol), legend =  c('TNBC','LumA','LumB','Her2','N/A'),pch = 20, bty='n', cex=.75)
 dev.off()
 
-#----------------------------------------------- DGE analysis ------------------------------------------
+#----------------------------------------------- DGE analysis (based on patient response) ------------------------------------------
 
 # DGE analysis of TNBC vs non-TNBC
 # do volcano plots for each pairwise comparison
@@ -467,4 +467,583 @@ abline(v=-1.5, col="red")
 abline(h=1.3, col="green")
 dev.off()
 
+#------------------------------------------------ Fold change testing ------------------------------------------------
+#lum A
+#lum A(RD vs pCR): change fold change threshold to 1.2
+#upregulated probes in lumA(RD) 
+up.reg1_lumA_response <- top1_lumA_response%>%filter(top1_lumA_response$adj.P.Val<0.05)
+up.reg1_lumA_response <- up.reg1_lumA_response%>%filter(up.reg1_lumA_response$logFC > 1.2)
+names_upreg_lumA_rd <- rownames(up.reg1_lumA_response) #2 significant probe
+#upregulated probes in lumA(pCR)
+up.reg2_lumA_response <- top1_lumA_response%>%filter(top1_lumA_response$adj.P.Val<0.05)
+up.reg2_lumA_response <- up.reg2_lumA_response%>%filter(up.reg2_lumA_response$logFC < -1.2)
+names_upreg_lumA_pcr <- rownames(up.reg2_lumA_response) #3 significant probes
 
+#lum A(RD vs pCR): change fold change threshold to 1.1
+#upregulated probes in lumA(RD) 
+up.reg1_lumA_response <- top1_lumA_response%>%filter(top1_lumA_response$adj.P.Val<0.05)
+up.reg1_lumA_response <- up.reg1_lumA_response%>%filter(up.reg1_lumA_response$logFC > 1.1)
+length(names_upreg_lumA_rd <- rownames(up.reg1_lumA_response)) #4 significant probes
+#upregulated probes in lumA(pCR)
+up.reg2_lumA_response <- top1_lumA_response%>%filter(top1_lumA_response$adj.P.Val<0.05)
+up.reg2_lumA_response <- up.reg2_lumA_response%>%filter(up.reg2_lumA_response$logFC < -1.1)
+length(names_upreg_lumA_pcr <- rownames(up.reg2_lumA_response)) #5 significant probes
+
+#lum A(RD vs pCR): change fold change threshold to 1.0
+#upregulated probes in lumA(RD) 
+up.reg1_lumA_response <- top1_lumA_response%>%filter(top1_lumA_response$adj.P.Val<0.05)
+up.reg1_lumA_response <- up.reg1_lumA_response%>%filter(up.reg1_lumA_response$logFC > 1)
+length(names_upreg_lumA_rd <- rownames(up.reg1_lumA_response)) #9 significant probes
+#upregulated probes in lumA(pCR)
+up.reg2_lumA_response <- top1_lumA_response%>%filter(top1_lumA_response$adj.P.Val<0.05)
+up.reg2_lumA_response <- up.reg2_lumA_response%>%filter(up.reg2_lumA_response$logFC < -1)
+length(names_upreg_lumA_pcr <- rownames(up.reg2_lumA_response)) #7 significant probes
+
+# TNBC(RD vs pCR)
+# TNBC(RD vs pCR): change fold change threshold to 1.2
+#upregulated probes in TNBC(RD)
+up.reg1_tnbc_respond <- top1_tnbc_response%>%filter(top1_tnbc_response$ adj.P.Val<0.05)
+up.reg1_tnbc_respond <- up.reg1_tnbc_respond%>%filter(up.reg1_tnbc_respond$logFC > 1.2)
+names_upreg_tnbc_rd <- rownames(up.reg1_tnbc_respond)
+length(names_upreg_tnbc_rd) #0 significant probe
+#upregulated probes in TNBC(pCR)
+up.reg2_tnbc_respond <- top1_tnbc_response%>%filter(top1_tnbc_response$ adj.P.Val<0.05)
+up.reg2_tnbc_respond <- up.reg2_tnbc_respond%>%filter(up.reg2_tnbc_respond$logFC < -1.2)
+names_upreg_tnbc_pcr <- rownames(up.reg2_tnbc_respond)
+length(names_upreg_tnbc_pcr) #0 significant probe
+
+# TNBC(RD vs pCR): change fold change threshold to 1.1
+#upregulated probes in TNBC(RD)
+up.reg1_tnbc_respond <- top1_tnbc_response%>%filter(top1_tnbc_response$ adj.P.Val<0.05)
+up.reg1_tnbc_respond <- up.reg1_tnbc_respond%>%filter(up.reg1_tnbc_respond$logFC > 1.1)
+names_upreg_tnbc_rd <- rownames(up.reg1_tnbc_respond)
+length(names_upreg_tnbc_rd)  #0 significant probe
+#upregulated probes in TNBC(pCR)
+up.reg2_tnbc_respond <- top1_tnbc_response%>%filter(top1_tnbc_response$ adj.P.Val<0.05)
+up.reg2_tnbc_respond <- up.reg2_tnbc_respond%>%filter(up.reg2_tnbc_respond$logFC < -1.1)
+names_upreg_tnbc_pcr <- rownames(up.reg2_tnbc_respond)
+length(names_upreg_tnbc_pcr)  #0 significant probe
+
+# TNBC(RD vs pCR): change fold change threshold to 1.0
+#upregulated probes in TNBC(RD)
+up.reg1_tnbc_respond <- top1_tnbc_response%>%filter(top1_tnbc_response$ adj.P.Val<0.05)
+up.reg1_tnbc_respond <- up.reg1_tnbc_respond%>%filter(up.reg1_tnbc_respond$logFC > 1.0)
+names_upreg_tnbc_rd <- rownames(up.reg1_tnbc_respond)
+length(names_upreg_tnbc_rd)  #0 significant probe
+#upregulated probes in TNBC(pCR)
+up.reg2_tnbc_respond <- top1_tnbc_response%>%filter(top1_tnbc_response$ adj.P.Val<0.05)
+up.reg2_tnbc_respond <- up.reg2_tnbc_respond%>%filter(up.reg2_tnbc_respond$logFC < -1.0)
+names_upreg_tnbc_pcr <- rownames(up.reg2_tnbc_respond)
+length(names_upreg_tnbc_pcr)  #0 significant probe
+
+#nonTNBC(RD) vs nonTNBC(pCR)
+#nonTNBC(RD) vs nonTNBC(pCR): change fold change threshold to 1.2
+#upregulated probe_id in non-TNBC(RD)
+up.reg1_nontnbc_respond  <- top1_nontnbc_response%>%filter(top1_nontnbc_response $logFC < -1.2)
+up.reg1_nontnbc_respond  <-  up.reg1_nontnbc_respond%>%filter(up.reg1_nontnbc_respond$adj.P.Val<0.05)
+names_upreg_rd_nonTNBC <- rownames(up.reg1_nontnbc_respond )
+length(names_upreg_rd_nonTNBC) #5
+#upregulated probe_id in non-TNBC(pCR)
+up.reg2_nontnbc_respond  <- top1_nontnbc_response %>%filter(top1_nontnbc_response $logFC > 1.2)
+up.reg2_nontnbc_respond  <- up.reg2_nontnbc_respond %>%filter(up.reg2_nontnbc_respond$adj.P.Val<0.05)
+names_upreg_pcr_nonTNBC <- rownames(up.reg2_nontnbc_respond )
+length(names_upreg_pcr_nonTNBC) #4
+
+#nonTNBC(RD) vs nonTNBC(pCR): change fold change threshold to 1.1
+#upregulated probe_id in non-TNBC(RD)
+up.reg1_nontnbc_respond  <- top1_nontnbc_response %>%filter(top1_nontnbc_response $logFC < -1.1)
+up.reg1_nontnbc_respond  <-  up.reg1_nontnbc_respond%>%filter(up.reg1_nontnbc_respond$adj.P.Val<0.05)
+names_upreg_rd_nonTNBC <- rownames(up.reg1_nontnbc_respond )
+length(names_upreg_rd_nonTNBC) #9
+#upregulated probe_id in non-TNBC(pCR)
+up.reg2_nontnbc_respond  <- top1_nontnbc_response %>%filter(top1_nontnbc_response $logFC > 1.1)
+up.reg2_nontnbc_respond  <- up.reg2_nontnbc_respond %>%filter(up.reg2_nontnbc_respond$adj.P.Val<0.05)
+names_upreg_pcr_nonTNBC <- rownames(up.reg2_nontnbc_respond )
+length(names_upreg_pcr_nonTNBC) #10
+
+#nonTNBC(RD) vs nonTNBC(pCR): change fold change threshold to 1.0
+#upregulated probe_id in non-TNBC(RD)
+up.reg1_nontnbc_respond  <- top1_nontnbc_response %>%filter(top1_nontnbc_response $logFC < -1.0)
+up.reg1_nontnbc_respond  <-  up.reg1_nontnbc_respond%>%filter(up.reg1_nontnbc_respond$adj.P.Val<0.05)
+names_upreg_rd_nonTNBC <- rownames(up.reg1_nontnbc_respond )
+length(names_upreg_rd_nonTNBC) #15
+#upregulated probe_id in non-TNBC(pCR)
+up.reg2_nontnbc_respond  <- top1_nontnbc_response %>%filter(top1_nontnbc_response $logFC > 1.0)
+up.reg2_nontnbc_respond  <- up.reg2_nontnbc_respond %>%filter(up.reg2_nontnbc_respond$adj.P.Val<0.05)
+names_upreg_pcr_nonTNBC <- rownames(up.reg2_nontnbc_respond )
+length(names_upreg_pcr_nonTNBC) #15
+
+#TNBC(RD) vs nonTNBC(RD) 
+#TNBC(RD) vs nonTNBC(RD): change fold change threshold to 1.2
+#upregulated probe_id in non-TNBC(RD)
+up.reg1_rd_tnbc_nontnbc  <- top1_rd_tnbc_nontnbc%>%filter(top1_rd_tnbc_nontnbc$logFC < -1.2)
+up.reg1_rd_tnbc_nontnbc <- up.reg1_rd_tnbc_nontnbc%>%filter(up.reg1_rd_tnbc_nontnbc$ adj.P.Val<0.05)
+names_upreg_rd_nontnbc<- rownames(up.reg1_rd_tnbc_nontnbc)
+length(names_upreg_rd_nontnbc) #69
+#upregulated probe_id in TNBC(RD)
+up.reg2_rd_tnbc_nontnbc  <- top1_rd_tnbc_nontnbc %>%filter(top1_rd_tnbc_nontnbc$logFC > 1.2)
+up.reg2_rd_tnbc_nontnbc  <- up.reg2_rd_tnbc_nontnbc%>%filter(up.reg2_rd_tnbc_nontnbc$ adj.P.Val<0.05) > 1)
+names_upreg_rd_tnbc <- rownames(up.reg2_rd_tnbc_nontnbc)
+length(names_upreg_rd_tnbc)  #25
+
+#TNBC(RD) vs nonTNBC(RD): change fold change threshold to 1.1
+#upregulated probe_id in non-TNBC(RD)
+up.reg1_rd_tnbc_nontnbc  <- top1_rd_tnbc_nontnbc%>%filter(top1_rd_tnbc_nontnbc$logFC < -1.1)
+up.reg1_rd_tnbc_nontnbc <- up.reg1_rd_tnbc_nontnbc%>%filter(up.reg1_rd_tnbc_nontnbc$ adj.P.Val<0.05) > 1)
+names_upreg_rd_nontnbc<- rownames(up.reg1_rd_tnbc_nontnbc)
+length(names_upreg_rd_nontnbc) #94
+#upregulated probe_id in TNBC(RD)
+up.reg2_rd_tnbc_nontnbc  <- top1_rd_tnbc_nontnbc %>%filter(top1_rd_tnbc_nontnbc$logFC > 1.1)
+up.reg2_rd_tnbc_nontnbc  <- up.reg2_rd_tnbc_nontnbc%>%filter(up.reg2_rd_tnbc_nontnbc$ adj.P.Val<0.05) > 1)
+names_upreg_rd_tnbc <- rownames(up.reg2_rd_tnbc_nontnbc)
+length(names_upreg_rd_tnbc)  #36
+
+#TNBC(RD) vs nonTNBC(RD): change fold change threshold to 1.0
+#upregulated probe_id in non-TNBC(RD)
+up.reg1_rd_tnbc_nontnbc  <- top1_rd_tnbc_nontnbc%>%filter(top1_rd_tnbc_nontnbc$logFC < -1.0)
+up.reg1_rd_tnbc_nontnbc <- up.reg1_rd_tnbc_nontnbc%>%filter(up.reg1_rd_tnbc_nontnbc$ adj.P.Val<0.05) > 1)
+names_upreg_rd_nontnbc<- rownames(up.reg1_rd_tnbc_nontnbc)
+length(names_upreg_rd_nontnbc) #112
+#upregulated probe_id in TNBC(RD)
+up.reg2_rd_tnbc_nontnbc  <- top1_rd_tnbc_nontnbc %>%filter(top1_rd_tnbc_nontnbc$logFC > 1.0)
+up.reg2_rd_tnbc_nontnbc  <- up.reg2_rd_tnbc_nontnbc%>%filter(up.reg2_rd_tnbc_nontnbc$ adj.P.Val<0.05) > 1)
+names_upreg_rd_tnbc <- rownames(up.reg2_rd_tnbc_nontnbc)
+length(names_upreg_rd_tnbc)  #55
+
+#TNBC(pCR) vs nonTNBC(pCR) 
+#TNBC(pCR) vs nonTNBC(pCR): change fold change threshold to 1.2
+#upregulated probe_id in non-TNBC(pCR)
+up.reg1_pcr_tnbc_nontnbc <- top1_pcr_tnbc_nontnbc%>%filter(top1_pcr_tnbc_nontnbc$logFC < -1.2)
+up.reg1_pcr_tnbc_nontnbc <- up.reg1_pcr_tnbc_nontnbc%>%filter(up.reg1_pcr_tnbc_nontnbc$ adj.P.Val<0.05)
+names_pcr_nontnbc  <- rownames(up.reg1_pcr_tnbc_nontnbc)
+length(names_pcr_nontnbc) #22
+#upregulated probe_id inTNBC(pCR)
+up.reg2_pcr_tnbc_nontnbc <- top1_pcr_tnbc_nontnbc%>%filter(top1_pcr_tnbc_nontnbc$logFC > 1.2)
+up.reg2_pcr_tnbc_nontnbc <- up.reg2_pcr_tnbc_nontnbc%>%filter(up.reg2_pcr_tnbc_nontnbc$ adj.P.Val<0.05)
+names_pcr_tnbc <- rownames(up.reg2_pcr_tnbc_nontnbc)
+length(names_pcr_tnbc) #15
+
+#TNBC(pCR) vs nonTNBC(pCR): change fold change threshold to 1.1
+#upregulated probe_id in non-TNBC(pCR)
+up.reg1_pcr_tnbc_nontnbc <- top1_pcr_tnbc_nontnbc%>%filter(top1_pcr_tnbc_nontnbc$logFC < -1.1)
+up.reg1_pcr_tnbc_nontnbc <- up.reg1_pcr_tnbc_nontnbc%>%filter(up.reg1_pcr_tnbc_nontnbc$ adj.P.Val<0.05)
+names_pcr_nontnbc  <- rownames(up.reg1_pcr_tnbc_nontnbc)
+length(names_pcr_nontnbc) #28
+#upregulated probe_id inTNBC(pCR)
+up.reg2_pcr_tnbc_nontnbc <- top1_pcr_tnbc_nontnbc%>%filter(top1_pcr_tnbc_nontnbc$logFC > 1.1)
+up.reg2_pcr_tnbc_nontnbc <- up.reg2_pcr_tnbc_nontnbc%>%filter(up.reg2_pcr_tnbc_nontnbc$ adj.P.Val<0.05)
+names_pcr_tnbc <- rownames(up.reg2_pcr_tnbc_nontnbc)
+length(names_pcr_tnbc) #16
+
+#TNBC(pCR) vs nonTNBC(pCR): change fold change threshold to 1.0
+#upregulated probe_id in non-TNBC(pCR)
+up.reg1_pcr_tnbc_nontnbc <- top1_pcr_tnbc_nontnbc%>%filter(top1_pcr_tnbc_nontnbc$logFC < -1.0)
+up.reg1_pcr_tnbc_nontnbc <- up.reg1_pcr_tnbc_nontnbc%>%filter(up.reg1_pcr_tnbc_nontnbc$ adj.P.Val<0.05)
+names_pcr_nontnbc  <- rownames(up.reg1_pcr_tnbc_nontnbc)
+length(names_pcr_nontnbc) #36
+#upregulated probe_id inTNBC(pCR)
+up.reg2_pcr_tnbc_nontnbc <- top1_pcr_tnbc_nontnbc%>%filter(top1_pcr_tnbc_nontnbc$logFC > 1.0)
+up.reg2_pcr_tnbc_nontnbc <- up.reg2_pcr_tnbc_nontnbc%>%filter(up.reg2_pcr_tnbc_nontnbc$ adj.P.Val<0.05)
+names_pcr_tnbc <- rownames(up.reg2_pcr_tnbc_nontnbc)
+length(names_pcr_tnbc) #25
+
+# TNBC  vs nonTNBC
+# TNBC  vs nonTNBC: change fold change threshold to 1.2
+#upregulated probes in non-TNBC
+up.reg1_tnbc_nontnbc  <- top1_tnbc_nontnbc%>%filter(top1_tnbc_nontnbc$logFC < -1.2) up.reg1_tnbc_nontnbc  <- up.reg1_tnbc_nontnbc %>%filter(up.reg1_tnbc_nontnbc$ adj.P.Val <0.05)
+names_upreg_nontnbc <- rownames(up.reg1_tnbc_nontnbc)
+length(names_upreg_nontnbc) #31
+#upregulated probes inTNBC
+up.reg2_tnbc_nontnbc <- top1_tnbc_nontnbc%>%filter(top1_tnbc_nontnbc$logFC > 1.2)
+up.reg2_tnbc_nontnbc <- up.reg2_tnbc_nontnbc%>%filter(up.reg2_tnbc_nontnbc$ adj.P.Val <0.05)
+names_upreg_tnbc <- rownames(up.reg2_tnbc_nontnbc)
+length(names_upreg_tnbc) #26
+
+# TNBC  vs nonTNBC: change fold change threshold to 1.1
+#upregulated probes in non-TNBC
+up.reg1_tnbc_nontnbc  <- top1_tnbc_nontnbc%>%filter(top1_tnbc_nontnbc$logFC < -1.1)
+up.reg1_tnbc_nontnbc  <- up.reg1_tnbc_nontnbc %>%filter(up.reg1_tnbc_nontnbc$ adj.P.Val <0.05)
+names_upreg_nontnbc <- rownames(up.reg1_tnbc_nontnbc)
+length(names_upreg_nontnbc) #83
+#upregulated probes inTNBC
+up.reg2_tnbc_nontnbc <- top1_tnbc_nontnbc%>%filter(top1_tnbc_nontnbc$logFC > 1.1)
+up.reg2_tnbc_nontnbc <- up.reg2_tnbc_nontnbc%>%filter(up.reg2_tnbc_nontnbc$ adj.P.Val <0.05)
+names_upreg_tnbc <- rownames(up.reg2_tnbc_nontnbc)
+length(names_upreg_tnbc) #37
+
+# TNBC  vs nonTNBC: change fold change threshold to 1.0
+#upregulated probes in non-TNBC
+up.reg1_tnbc_nontnbc  <- top1_tnbc_nontnbc%>%filter(top1_tnbc_nontnbc$logFC < -1)
+up.reg1_tnbc_nontnbc  <- up.reg1_tnbc_nontnbc %>%filter(up.reg1_tnbc_nontnbc$ adj.P.Val <0.05)
+names_upreg_nontnbc <- rownames(up.reg1_tnbc_nontnbc)
+length(names_upreg_nontnbc) #104
+#upregulated probes inTNBC
+up.reg2_tnbc_nontnbc <- top1_tnbc_nontnbc%>%filter(top1_tnbc_nontnbc$logFC > 1)
+up.reg2_tnbc_nontnbc <- up.reg2_tnbc_nontnbc%>%filter(up.reg2_tnbc_nontnbc$ adj.P.Val <0.05)
+names_upreg_tnbc <- rownames(up.reg2_tnbc_nontnbc)
+length(names_upreg_tnbc) #56
+
+#-------------------------------------------------- Probes annotation -----------------------------------------------
+# TNBC vs non-TNBC (40)
+# extracting significant probe ids
+dd_tnbc_nontnbc <- subset(top1_tnbc_nontnbc, adj.P.Val<0.05 & abs(logFC)>1.5) # subset extreme values
+str(dd_tnbc_nontnbc) # for TNBC vs non-TNBC 40 obs. of  6 variables 
+out_tnbc_nontnbc <- data.frame(xxhuex[rownames(dd_tnbc_nontnbc)] ) # search for rownames example
+
+gene_labs_tnbc_nontnbc <- NULL # gene ids
+for (i in 1:length(rownames(dd_tnbc_nontnbc))){ gene_labs_tnbc_nontnbc <- c(gene_labs_tnbc_nontnbc, out_tnbc_nontnbc[, paste0("X", rownames(dd_tnbc_nontnbc)[i])]) }
+dd_tnbc_nontnbc <- cbind(gene_labs_tnbc_nontnbc, dd_tnbc_nontnbc) # get probe and gene IDs
+dd_tbl_tnbc_nontnbc <- as.data.table(dd_tnbc_nontnbc) # print as table 
+df_tnbc_nontnbc <- data.frame(dd_tnbc_nontnbc)
+df_tnbc_nontnbc$DGE <- 'TNBC vs nonTNBC'
+table_tnbc_nontnbc_1.5 <- subset(df_tnbc_nontnbc, select=c('gene_labs_tnbc_nontnbc','logFC','adj.P.Val'))
+info <- select(hgu133a.db, rownames(table_tnbc_nontnbc_1.5), c("SYMBOL","GENENAME"))
+info <- subset(info,select=c("SYMBOL","GENENAME"))
+table_tnbc_nontnbc_1.5 <- cbind(table_tnbc_nontnbc_1.5,info)
+write.csv(table_tnbc_nontnbc_1.5, 'table_tnbc_nontnbc_probe_ann.csv')
+
+# TNBC(RD) vs nonTNBC(RD) (43)
+# extracting significant probe ids
+dd_rd_tnbc_nontnbc <- subset(top1_rd_tnbc_nontnbc, adj.P.Val<0.05 & abs(logFC)>1.5) # subset extreme values
+str(dd_rd_tnbc_nontnbc) # for (RD) TNBC vs non-TNBC 43 obs. of  6 variables
+out_rd_tnbc_nontnbc <- data.frame(xxhuex[rownames(dd_rd_tnbc_nontnbc)] ) # search for rownames example
+
+gene_labs_rd_tnbc_nontnbc <- NULL # gene ids
+for (i in 1:length(rownames(dd_rd_tnbc_nontnbc))){ gene_labs_rd_tnbc_nontnbc <- c(gene_labs_rd_tnbc_nontnbc, out_rd_tnbc_nontnbc[, paste0("X", rownames(dd_rd_tnbc_nontnbc)[i])]) }
+dd_rd_tnbc_nontnbc <- cbind(gene_labs_rd_tnbc_nontnbc, dd_rd_tnbc_nontnbc) # get probe and gene IDs
+dd_tbl_rd_tnbc_nontnbc <- as.data.table(dd_rd_tnbc_nontnbc) # print as table 
+df_rd_tnbc_nontnbc <- data.frame(dd_rd_tnbc_nontnbc)
+df_rd_tnbc_nontnbc$DGE <- 'TNBC-RD vs nonTNBC-RD'
+table_rd_tnbc_nontnbc_1.5 <- subset(df_rd_tnbc_nontnbc, select=c('gene_labs_rd_tnbc_nontnbc','logFC','adj.P.Val'))
+info <- select(hgu133a.db, rownames(table_rd_tnbc_nontnbc_1.5), c("SYMBOL","GENENAME"))
+table_rd_tnbc_nontnbc_1.5 <- cbind(table_rd_tnbc_nontnbc_1.5,info)
+write.csv(table_rd_tnbc_nontnbc_1.5, 'table_rd_tnbc_nontnbc_probe_ann .csv')
+
+# TNBC(pCR) vs nonTNBC(pCR) (15)
+# extracting significant probe ids
+dd_pcr_tnbc_nontnbc <- subset(top1_pcr_tnbc_nontnbc, adj.P.Val<0.05 & abs(logFC)>1.5) # subset extreme values
+str(dd_pcr_tnbc_nontnbc) # for (pCR) TNBC vs non-TNBC 15 obs. of  6 variables
+out_pcr_tnbc_nontnbc <- data.frame(xxhuex[rownames(dd_pcr_tnbc_nontnbc)] ) # search for rownames example
+
+gene_labs_pcr_tnbc_nontnbc <- NULL # gene ids
+for (i in 1:length(rownames(dd_pcr_tnbc_nontnbc))){ gene_labs_pcr_tnbc_nontnbc <- c(gene_labs_pcr_tnbc_nontnbc, out_pcr_tnbc_nontnbc[, paste0("X", rownames(dd_pcr_tnbc_nontnbc)[i])]) }
+dd_pcr_tnbc_nontnbc <- cbind(gene_labs_pcr_tnbc_nontnbc, dd_pcr_tnbc_nontnbc) # get probe and gene IDs
+dd_tbl_pcr_tnbc_nontnbc <- as.data.table(dd_pcr_tnbc_nontnbc) # print as table 
+df_pcr_tnbc_nontnbc <- data.frame(dd_pcr_tnbc_nontnbc)
+df_pcr_tnbc_nontnbc$DGE <- 'TNBC-pCR vs nonTNBC-pCR'
+table_pcr_tnbc_nontnbc_1.5 <- subset(df_pcr_tnbc_nontnbc, select=c('gene_labs_pcr_tnbc_nontnbc','logFC','adj.P.Val'))
+info <- select(hgu133a.db, rownames(table_pcr_tnbc_nontnbc_1.5), c("SYMBOL","GENENAME"))
+table_pcr_tnbc_nontnbc_1.5 <- cbind(table_pcr_tnbc_nontnbc_1.5,info)
+write.csv(table_pcr_tnbc_nontnbc_1.5, 'table_pcr_tnbc_nontnbc_probe_ann .csv')
+
+# non-TNBC(RD) vs non-TNBC(pCR) (1)
+# extracting significant probe ids
+dd_nontnbc_response <- subset(top1_nontnbc_response, adj.P.Val<0.05 & abs(logFC)>1.5) # subset extreme values 
+str(dd_nontnbc_response) # for non-TNBC(RD) vs(pCR) 1 obs. of  6 variables
+out_nontnbc_response <- data.frame(xxhuex[rownames(dd_nontnbc_response)] ) # search for rownames example
+
+gene_labs_nontnbc_respond <- NULL # gene ids
+for (i in 1:length(rownames(dd_nontnbc_response))){ gene_labs_nontnbc_respond <- c(gene_labs_nontnbc_respond, out_nontnbc_response[, paste0("X", rownames(dd_nontnbc_response)[i])]) }
+dd_nontnbc_response <- cbind(gene_labs_nontnbc_respond, dd_nontnbc_response) # get probe and gene IDs
+dd_tbl_nontnbc_respond <- as.data.table(dd_nontnbc_response) # print as table 
+df_nontnbc_response <- data.frame(dd_nontnbc_response)
+df_nontnbc_response$DGE <- 'nonTNBC-RD vs nonTNBC-pCR'
+table_nontnbc_1.5 <- subset(df_nontnbc_response, select=c('gene_labs_nontnbc_respond','logFC','adj.P.Val'))
+info <- select(hgu133a.db, rownames(table_nontnbc_1.5), c("SYMBOL","GENENAME"))
+table_nontnbc_1.5 <- cbind(table_nontnbc_1.5,info)
+write.csv(table_nontnbc_1.5, 'table_nontnbc_probe_ann.csv')
+
+# lumA(RD) vs lumA(pCR) with logFC>1.2 (5)
+# extracting significant probe ids
+dd_lumA_response <- subset(top1_lumA_response, adj.P.Val<0.05 & abs(logFC)>1.2) # subset extreme values 
+str(dd_lumA_response) # for lumA(RD) vs(pCR) 4 obs. of  6 variables
+out_lumA_response <- data.frame(xxhuex[rownames(dd_lumA_response)] ) # search for rownames example
+
+gene_labs_lumA_response <- NULL # gene ids
+for (i in 1:length(rownames(dd_lumA_response))){ gene_labs_lumA_response <- c(gene_labs_lumA_response, out_lumA_response[, paste0("X", rownames(dd_lumA_response)[i])]) }
+dd_lumA_response <- cbind(gene_labs_lumA_response, dd_lumA_response) # get probe and gene IDs
+dd_tbl_lumA_response <- as.data.table(dd_lumA_response) # print as table 
+df_lumA_response <- data.frame(dd_lumA_response)
+df_lumA_response$DGE <- 'lumA-RD vs lumA-pCR'
+table_lumA_1.2 <- subset(df_lumA_response, select=c('gene_labs_lumA_response','logFC','adj.P.Val'))
+info <- select(hgu133a.db, rownames(table_lumA_1.2), c("SYMBOL","GENENAME"))
+table_lumA_1.2 <- cbind(table_lumA_1.2,info)
+
+#-------------------------------------------------- venn diagram -------------------------------------------------- 
+#showing the overlapping of significant probes of each comparison
+x <- list(
+TNBC_vs_NonTNBC = rownames(dd_tnbc_nontnbc), 
+TNBC.RD_vs_NonTNBC.RD = rownames(dd_rd_tnbc_nontnbc), 
+TNBC.pCR_vs_NonTNBC.pCR = rownames(dd_pcr_tnbc_nontnbc),  
+NonTNBC.RD_vs_pCR = rownames(dd_nontnbc_response))
+png('Venn.diagram_probes.png',height= 1000, width= 1900, units='px') 
+ggvenn(x, fill_color = c("#0073C2FF", "#EFC000FF", "#868686FF", "#CD534CFF"), stroke_size = 1, set_name = FALSE,show_percentage = FALSE, text_size = 8)
+dev.off()
+
+#-------------------------------------------------- annotate all probes -------------------------------------------------- 
+# link all probes to corresponding gene names (to check Ca2+ gene expression & identify the top differentially expressed probes)
+# from DGE TNBC(RD) vs TNBC(pCR)
+dd_tnbc_respond <- top1_tnbc_response
+str(dd_tnbc_respond) 
+acc.no <-  data.frame(unlist(xxhuex[rownames(dd_tnbc_respond)]))
+
+gene_labs_tnbc_respond <- acc.no[,1] # gene ids
+dd_tnbc_respond <- cbind(gene_labs_tnbc_respond, dd_tnbc_respond) # get probe and gene IDs
+
+table_tnbc_respond <- subset(dd_tnbc_respond, select=c('gene_labs_tnbc_respond','logFC','adj.P.Val'))
+info <- select(hgu133a.db, rownames(table_tnbc_respond), c("SYMBOL", "GENENAME")) # 24464 rows
+
+info_temp <- data.frame(matrix( rep(0, length(info$PROBEID)), nrow=length(info$PROBEID), ncol=2))
+colnames(info_temp) <- c("SYMBOL", "GENENAME")
+str(info_temp)
+for (i in 1:length( rownames(table_tnbc_respond) ) ) { # all 22283 probes
+	rownames(info_temp)[i] <- rownames(table_tnbc_respond)[i] 
+	info_temp[i,1] <-  select(hgu133a.db, rownames(table_tnbc_respond)[i], c("SYMBOL"))[2]
+	info_temp[i,2] <-  select(hgu133a.db, rownames(table_tnbc_respond)[i], c("GENENAME"))[2]
+} # end for 
+head(info_temp) # “1:1 mapping” message not important
+str(info_temp) # 24464 rows for each unique gene
+
+link probes to gene name
+gene.name <- subset(info_temp, rownames(info_temp) == rownames(table_tnbc_respond), select=c('SYMBOL','GENENAME'))
+table_tnbc_respond <- cbind(table_tnbc_respond,gene.name)
+write.csv(table_tnbc_respond,'tnbc_probes_annotation.csv')
+
+#Annotate all probes in TNBC vs Non-TNBC
+#extracting probe ids
+dd_tnbc_nontnbc <- top1_tnbc_nontnbc
+str(dd_tnbc_nontnbc) 
+acc.no_tnbc_nontnbc <-  data.frame(unlist(xxhuex[rownames(dd_tnbc_nontnbc)])) # search for rownames 
+gene_labs_tnbc_nontnbc <- acc.no_tnbc_nontnbc[,1] # gene ids
+dd_tnbc_nontnbc <- cbind(gene_labs_tnbc_nontnbc, dd_tnbc_nontnbc) # get probe and gene IDs
+df_tnbc_nontnbc$DGE <- 'TNBC vs nonTNBC'
+table_tnbc_nontnbc_1.5 <- subset(dd_tnbc_nontnbc, select=c('gene_labs_tnbc_nontnbc','logFC','adj.P.Val'))
+info <- select(hgu133a.db, rownames(table_tnbc_nontnbc_1.5), c("SYMBOL", "GENENAME"))
+
+info_temp <- data.frame(matrix( rep(0, length(info$PROBEID)), nrow=length(info$PROBEID), ncol=2))
+colnames(info_temp) <- c("SYMBOL", "GENENAME")
+str(info_temp)
+for (i in 1:length( rownames(table_tnbc_nontnbc_1.5 ) ) ) { # all 22283 probes
+	rownames(info_temp)[i] <- rownames(table_tnbc_nontnbc_1.5 )[i] 
+	info_temp[i,1] <-  select(hgu133a.db, rownames(table_tnbc_nontnbc_1.5 )[i], c("SYMBOL"))[2]
+	info_temp[i,2] <-  select(hgu133a.db, rownames(table_tnbc_nontnbc_1.5 )[i], c("GENENAME"))[2]
+} # end for 
+head(info_temp) # “1:1 mapping” message not important
+str(info_temp) # 24464 rows for each unique gene
+
+link probes to gene name
+gene.name <- subset(info_temp, rownames(info_temp) == rownames(table_tnbc_nontnbc_1.5), select=c('SYMBOL','GENENAME'))
+table_tnbc_nontnbc_1.5 <- cbind(table_tnbc_nontnbc_1.5,gene.name)
+write.csv(table_tnbc_nontnbc_1.5,'tnbc_nontnbc_1.5_probes_annotation_all.csv')
+
+#Annotate all probes in TNBC(RD) vs Non-TNBC(RD)
+dd_rd_tnbc_nontnbc <-top1_rd_tnbc_nontnbc
+str(dd_rd_tnbc_nontnbc)
+acc.no_rd_tnbc_nontnbc <-  data.frame(unlist(xxhuex[rownames(dd_rd_tnbc_nontnbc)])) # search for rownames 
+gene_labs_rd_tnbc_nontnbc <- acc.no_rd_tnbc_nontnbc[,1] # gene ids
+dd_rd_tnbc_nontnbc <- cbind(gene_labs_rd_tnbc_nontnbc, dd_rd_tnbc_nontnbc) # get probe and gene IDs
+#df_rd_tnbc_nontnbc$DGE <- 'TNBC vs nonTNBC'
+table_rd_tnbc_nontnbc_1.5 <- subset(dd_rd_tnbc_nontnbc, select=c('gene_labs_rd_tnbc_nontnbc','logFC','adj.P.Val'))
+info <- select(hgu133a.db, rownames(table_rd_tnbc_nontnbc_1.5), c("SYMBOL", "GENENAME"))
+
+info_temp <- data.frame(matrix( rep(0, length(info$PROBEID)), nrow=length(info$PROBEID), ncol=2))
+colnames(info_temp) <- c("SYMBOL", "GENENAME")
+str(info_temp)
+for (i in 1:length( rownames(table_rd_tnbc_nontnbc_1.5 ) ) ) { # all 22283 probes
+	rownames(info_temp)[i] <- rownames(table_rd_tnbc_nontnbc_1.5 )[i] 
+	info_temp[i,1] <-  select(hgu133a.db, rownames(table_rd_tnbc_nontnbc_1.5 )[i], c("SYMBOL"))[2]
+	info_temp[i,2] <-  select(hgu133a.db, rownames(table_rd_tnbc_nontnbc_1.5 )[i], c("GENENAME"))[2]
+} # end for 
+head(info_temp) # “1:1 mapping” message not important
+str(info_temp) # 24464 rows for each unique gene
+
+link probes to gene name
+gene.name <- subset(info_temp, rownames(info_temp) == rownames(table_rd_tnbc_nontnbc_1.5), select=c('SYMBOL','GENENAME'))
+table_rd_tnbc_nontnbc_1.5 <- cbind(table_rd_tnbc_nontnbc_1.5,gene.name)
+write.csv(table_rd_tnbc_nontnbc_1.5,'table_rd_tnbc_nontnbc_1.5_probes_annotation_all2.csv')
+
+# Annotate all probes in TNBC(pCR) vs Non-TNBC(pCR)
+dd_pcr_tnbc_nontnbc <-top1_pcr_tnbc_nontnbc
+str(dd_pcr_tnbc_nontnbc)
+acc.no_pcr_tnbc_nontnbc <-  data.frame(unlist(xxhuex[rownames(dd_pcr_tnbc_nontnbc)])) # search for rownames 
+gene_labs_pcr_tnbc_nontnbc <- acc.no_pcr_tnbc_nontnbc[,1] # gene ids
+dd_pcr_tnbc_nontnbc <- cbind(gene_labs_pcr_tnbc_nontnbc, dd_pcr_tnbc_nontnbc) # get probe and gene IDs
+#df_pcr_tnbc_nontnbc$DGE <- 'TNBC vs nonTNBC'
+table_pcr_tnbc_nontnbc_1.5 <- subset(dd_pcr_tnbc_nontnbc, select=c('gene_labs_pcr_tnbc_nontnbc','logFC','adj.P.Val'))
+info <- select(hgu133a.db, rownames(table_pcr_tnbc_nontnbc_1.5), c("SYMBOL", "GENENAME"))
+
+info_temp <- data.frame(matrix( rep(0, length(info$PROBEID)), nrow=length(info$PROBEID), ncol=2))
+colnames(info_temp) <- c("SYMBOL", "GENENAME")
+str(info_temp)
+for (i in 1:length( rownames(table_pcr_tnbc_nontnbc_1.5 ) ) ) { # all 22283 probes
+	rownames(info_temp)[i] <- rownames(table_pcr_tnbc_nontnbc_1.5 )[i] 
+	info_temp[i,1] <-  select(hgu133a.db, rownames(table_pcr_tnbc_nontnbc_1.5 )[i], c("SYMBOL"))[2]
+	info_temp[i,2] <-  select(hgu133a.db, rownames(table_pcr_tnbc_nontnbc_1.5 )[i], c("GENENAME"))[2]
+} # end for 
+head(info_temp) # “1:1 mapping” message not important
+str(info_temp) # 24464 rows for each unique gene
+
+link probes to gene name
+gene.name <- subset(info_temp, rownames(info_temp) == rownames(table_pcr_tnbc_nontnbc_1.5), select=c('SYMBOL','GENENAME'))
+table_pcr_tnbc_nontnbc_1.5 <- cbind(table_pcr_tnbc_nontnbc_1.5,gene.name)
+write.csv(table_pcr_tnbc_nontnbc_1.5,'table_pcr_tnbc_nontnbc_1.5_probes_annotation_all.csv')
+
+
+#----------------------------------------------- DGE analysis (based on chemosensitivity) ------------------------------------------
+# sort by sensitivity prediction
+sen_tnbc <-  tnbc%>%filter(chemosensitivity.prediction == 'Rx Sensitive') #43
+insen_tnbc <-  tnbc%>%filter(chemosensitivity.prediction == 'Rx Insensitive') #135
+
+sen_nontnbc <-  nontnbc%>%filter(chemosensitivity.prediction == 'Rx Sensitive') #126
+insen_nontnbc <-  nontnbc%>%filter(chemosensitivity.prediction == 'Rx Insensitive') #204
+
+sensitivity<- rbind(sen_tnbc,insen_tnbc,sen_nontnbc,insen_nontnbc)
+rawdata_sensitivity  <- read.celfiles(sensitivity$celfiles) 
+normdata_sensitivity<-rma(rawdata_sensitivity)
+
+# TNBC
+mypch2_sensitivity <- c(rep(1,43),rep(2,135),rep(3,126),rep(4,204))	
+design_sensitivity  <- model.matrix(~-1+factor(mypch2_sensitivity))
+colnames(design_sensitivity)<- c('s.t', 'i.t','s.n','i.n')  #  group labels
+
+top0_sensitivity_tnbc <- eBayes(contrasts.fit(lmFit(normdata_sensitivity, design_sensitivity),makeContrasts(s.t - i.t, levels=design_sensitivity)))
+top1_sensitivity_tnbc <- topTable(top0_sensitivity_tnbc , coef='s.t - i.t',adjust='BH',number=22283,sort.by='P') 
+
+#upregulated probe_id in sensitive group
+up.reg1_sensitivity_tnbc <- top1_sensitivity_tnbc%>%filter(top1_sensitivity_tnbc$logFC > 1.5)
+up.reg1_sensitivity_tnbc  <-  up.reg1_sensitivity_tnbc%>%filter(up.reg1_sensitivity_tnbc$adj.P.Val<0.05)
+names_sensitive_tnbc <- rownames(up.reg1_sensitivity_tnbc)
+length(names_sensitive_tnbc) #0
+#upregulated probe_id in insensitive group
+up.reg2_sensitivity_tnbc  <- top1_sensitivity_tnbc%>%filter(top1_sensitivity_tnbc$logFC < -1.5)
+up.reg2_sensitivity_tnbc <- up.reg2_sensitivity_tnbc %>%filter(up.reg2_sensitivity_tnbc$adj.P.Val<0.05)
+names_insensitive_tnbc <- rownames(up.reg2_sensitivity_tnbc)
+length(names_insensitive_tnbc) #0
+
+png(file="volcano-chemosensitivity_tnbc_sensitive-insensitive.png",units="px")
+plot(top1_sensitivity_tnbc$logFC,-log10(top1_sensitivity_tnbc$adj.P.Val), main='Differential Gene Expression \n  between TNBC Chemo-sensitive and Chemo-insensitive group', xlab='log2FC(Sensitive/Insensitive)',ylab='-log10(BH P value)', cex=0.5, cex.main=1.2,cex.axis=1, cex.lab=1, pch=21,xlim=c(-2,2))
+text(1.5,2.5,label='Upregulated in \n Sensitive group',cex=1)
+text(-1.5,2.5,label='Upregulated in \n Insensitive group',cex=1)
+abline(v=-1.5, col="red")
+abline(v=1.5, col="red")
+abline(h=1.3, col="green")
+dev.off()
+
+# Non-TNBC
+mypch2_sensitivity <- c(rep(1,43),rep(2,135),rep(3,126),rep(4,204))	
+design_sensitivity  <- model.matrix(~-1+factor(mypch2_sensitivity))
+colnames(design_sensitivity)<- c('s.t', 'i.t','s.n','i.n')  #  group labels
+
+top0_sensitivity_nontnbc <- eBayes(contrasts.fit(lmFit(normdata_sensitivity, design_sensitivity), makeContrasts(s.n - i.n, levels=design_sensitivity)))
+top1_sensitivity_nontnbc <- topTable(top0_sensitivity_nontnbc , coef='s.n - i.n',adjust='BH',number=22283,sort.by='P') 
+
+#upregulated probe_id in sensitive group
+up.reg1_sensitivity_nontnbc <- top1_sensitivity_nontnbc%>%filter(top1_sensitivity_nontnbc$logFC > 1.5)
+up.reg1_sensitivity_nontnbc  <-  up.reg1_sensitivity_nontnbc%>%filter(up.reg1_sensitivity_nontnbc$adj.P.Val<0.05)
+names_sensitive_nontnbc <- rownames(up.reg1_sensitivity_nontnbc)
+length(names_sensitive_nontnbc) #0
+#upregulated probe_id in insensitive group
+up.reg2_sensitivity_nontnbc  <- top1_sensitivity_nontnbc%>%filter(top1_sensitivity_nontnbc$logFC < -1.5)
+up.reg2_sensitivity_nontnbc <- up.reg2_sensitivity_nontnbc %>%filter(up.reg2_sensitivity_nontnbc$adj.P.Val<0.05)
+names_insensitive_nontnbc <- rownames(up.reg2_sensitivity_nontnbc)
+length(names_insensitive_nontnbc) #0
+
+png(file="volcano-nonTNBC_chemosensitivity.png",units="px")
+plot(top1_sensitivity_nontnbc$logFC,-log10(top1_sensitivity_nontnbc$adj.P.Val), main='Differential Gene Expression \n between Non-TNBC Chemo-sensitive and Chemo-insensitive group', xlab='log2FC(Sensitive/Insensitive)',ylab='-log10(BH P value)', cex=0.5, cex.main=1,cex.axis=1, cex.lab=1, pch=21,xlim=c(-2,2))
+text(1.5,4.5,label='Upregulated in \n Sensitive group',cex=1)
+text(-1.5,4.5,label='Upregulated in \n Insensitive group',cex=1)
+abline(v=-1.5, col="red")
+abline(v=1.5, col="red")
+abline(h=1.3, col="green")
+dev.off()
+
+# TNBC insensitive vs Non-TNBC insensitive
+mypch2_sensitivity <- c(rep(1,43),rep(2,135),rep(3,126),rep(4,204))	
+design_sensitivity  <- model.matrix(~-1+factor(mypch2_sensitivity))
+colnames(design_sensitivity)<- c('s.t', 'i.t','s.n','i.n')  #  group labels
+
+top0_sensitivity <- eBayes(contrasts.fit(lmFit(normdata_sensitivity, design_sensitivity),makeContrasts(i.t - i.n, levels=design_sensitivity)))
+top1_insensitive <- topTable(top0_sensitivity , coef='i.t - i.n',adjust='BH',number=22283,sort.by='P') 
+
+#upregulated probe_id in TNBC insensitive group
+up.reg1_tnbc <- top1_insensitive%>%filter(top1_insensitive$logFC > 1.5)
+up.reg1_tnbc  <-  up.reg1_tnbc%>%filter(up.reg1_tnbc$adj.P.Val<0.05)
+names_insensitive_tnbc <- rownames(up.reg1_tnbc)
+length(names_insensitive_tnbc) #12
+#upregulated probe_id in nonTNBC  insensitive group
+up.reg2_nontnbc  <- top1_insensitive%>%filter(top1_insensitive$logFC < -1.5)
+up.reg2_nontnbc <- up.reg2_nontnbc %>%filter(up.reg2_nontnbc$adj.P.Val<0.05)
+names_insensitive_nontnbc <- rownames(up.reg2_nontnbc)
+length(names_insensitive_nontnbc) #29
+
+png(file="volcano-insensitive_tnbc_nontnbc.png",units="px")
+plot(top1_insensitive$logFC,-log10(top1_insensitive$adj.P.Val), main='Differential Gene Expression \n between Insensitive TNBC and Insensitive Non-TNBC group', xlab='log2FC(Insensitive TNBC/Insensitive Non-TNBC)',ylab='-log10(BH P value)', cex=0.5, cex.main=1,cex.axis=1, cex.lab=1, pch=21,xlim=c(-2,2))
+text(1.5,50,label='Upregulated in \n Insensitive TNBC group',cex=0.9)
+text(-1.3,50,label='Upregulated in \n Insensitive Non-TNBC group',cex=0.9)
+abline(v=-1.5, col="red")
+abline(v=1.5, col="red")
+abline(h=1.3, col="green")
+dev.off()
+
+#probe annotation
+dd_insensitive<- subset(top1_insensitive, adj.P.Val<0.05 & abs(logFC)>1.5) # subset extreme values
+str(dd_insensitive) 
+out_insensitive <- data.frame(xxhuex[rownames(dd_insensitive)] ) # search for rownames example
+
+acc_no<- NULL # gene ids
+for (i in 1:length(rownames(dd_insensitive))){ acc_no <- c(acc_no, out_insensitive[, paste0("X", rownames(dd_insensitive)[i])]) }
+dd_insensitive <- cbind(acc_no, dd_insensitive) # get probe and gene IDs
+dd_tbl_insensitive  <- as.data.table(dd_insensitive) # print as table 
+df_insensitive <- data.frame(dd_insensitive)
+df_insensitive$DGE <- 'insensitive'
+table_insensitive <- subset(df_insensitive, select=c('acc_no','logFC','adj.P.Val'))
+info <- select(hgu133a.db, rownames(table_insensitive), c("SYMBOL","GENENAME"))
+info <- subset(info,select=c("SYMBOL","GENENAME"))
+table_insensitive <- cbind(table_insensitive,info)
+write.csv(table_insensitive, 'table_insensitive_probe_ann.csv')
+
+# TNBC sensitive vs Non-TNBC sensitive
+mypch2_sensitivity <- c(rep(1,43),rep(2,135),rep(3,126),rep(4,204))	
+design_sensitivity  <- model.matrix(~-1+factor(mypch2_sensitivity))
+colnames(design_sensitivity)<- c('s.t', 'i.t','s.n','i.n')  #  group labels
+
+top0_sensitivity <- eBayes(contrasts.fit(lmFit(normdata_sensitivity, design_sensitivity),makeContrasts(s.t - s.n, levels=design_sensitivity)))
+top1_sensitive <- topTable(top0_sensitivity , coef='s.t - s.n',adjust='BH',number=22283,sort.by='P') 
+
+#upregulated probe_id in TNBC sensitive group
+up.reg1_tnbc <- top1_sensitive%>%filter(top1_sensitive$logFC > 1.5)
+up.reg1_tnbc  <-  up.reg1_tnbc%>%filter(up.reg1_tnbc$adj.P.Val<0.05)
+names_sensitive_tnbc <- rownames(up.reg1_tnbc)
+length(names_sensitive_tnbc) #18
+#upregulated probe_id in nonTNBC  sensitive group
+up.reg2_nontnbc  <- top1_sensitive%>%filter(top1_sensitive$logFC < -1.5)
+up.reg2_nontnbc <- up.reg2_nontnbc %>%filter(up.reg2_nontnbc$ adj.P.Val<0.05)
+names_sensitive_nontnbc <- rownames(up.reg2_nontnbc)
+length(names_sensitive_nontnbc) #53
+
+png(file="volcano-sensitive_tnbc_nontnbc.png",units="px")
+plot(top1_sensitive$logFC,-log10(top1_sensitive$adj.P.Val), main='Differential Gene Expression \n between Sensitive TNBC and Sensitive Non-TNBC group', xlab='log2FC(Sensitive TNBC/Sensitive Non-TNBC)',ylab='-log10(BH P value)', cex=0.5, cex.main=1,cex.axis=1, cex.lab=1, pch=21,xlim=c(-2,2))
+text(1.5,25,label='Upregulated in \n Sensitive TNBC group',cex=0.9)
+text(-1.4,25,label='Upregulated in \n Sensitive Non-TNBC group',cex=0.9)
+abline(v=-1.5, col="red")
+abline(v=1.5, col="red")
+abline(h=1.3, col="green")
+dev.off()
+
+#probes annotation
+dd_sensitive<- subset(top1_sensitive, adj.P.Val<0.05 & abs(logFC)>1.5) # subset extreme values
+str(dd_sensitive) 
+out_sensitive <- data.frame(xxhuex[rownames(dd_sensitive)] ) # search for rownames example
+
+acc_no<- NULL # gene ids
+for (i in 1:length(rownames(dd_sensitive))){ acc_no <- c(acc_no, out_sensitive[, paste0("X", rownames(dd_sensitive)[i])]) }
+dd_sensitive <- cbind(acc_no, dd_sensitive) # get probe and gene IDs
+dd_tbl_sensitive  <- as.data.table(dd_sensitive) # print as table 
+df_sensitive <- data.frame(dd_sensitive)
+df_sensitive$DGE <- 'sensitive'
+table_sensitive <- subset(df_sensitive, select=c('acc_no','logFC','adj.P.Val'))
+info <- select(hgu133a.db, rownames(table_sensitive), c("SYMBOL","GENENAME"))
+table_sensitive <- cbind(table_sensitive,info)
+write.csv(table_sensitive, 'table_sensitive_probe_ann.csv')
+
+#----------------------------------------------- DGE analysis (based on chemosensitivity) ------------------------------------------
