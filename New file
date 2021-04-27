@@ -155,10 +155,35 @@ png(file="rawboxplot-all.png", width=1200, height=1200, units="px")
 boxplot(log2(eset), las=2, ylab='log2 of expression level', names=names, col="red", margins = c(10, 10), cex=1)
 dev.off() # log2 here because no transformation completed
 
+# draw PCA of raw data expression levels
+pca1<- prcomp(t(eset))
+pcvalue1 = round(100*pca1$sdev[1]^2/(sum(pca1$sdev^2)),1)
+pcvalue2 = round(100*pca1$sdev[2]^2/(sum(pca1$sdev^2)),1)
+pcvalue1width  = 40*pcvalue1 # pixel width PC1				
+pcvalue1height = 40*pcvalue2 # pixel height PC2				
+
+png(file="rawPCA-all.png", units="px")
+plot(pca1$x, col=mycol, pch=mypch,xlab=pcvalue1, ylab=pcvalue2, main='PCA of all raw data', cex=1, cex.axis=1, cex.lab=1)
+text(pca1$x, names, pos=3.9, cex =0.5)
+#legend("right", legend= names, col=mycol, pch=mypch, cex = 0.55, inset=c(-0.1,-0.1),xpd = TRUE) 
+dev.off()  
+
+#----------------------------------------------- normalisation ----------------------------------------------- 
 #normalise the rawdata
 normdata_tnbc_nontnbc <-rma(rawdata_tnbc_nontnbc)
 eset2 <-exprs(normdata_tnbc_nontnbc)
 length(rownames(eset2)) #22283 probes
+
+# draw heatmap of normalised data # just 100 probes to get an idea
+png(file="finalheatmap-all.png", width=2000, height=2000, units="px")
+heatmap(eset2[1:100,], Colv=as.dendrogram(hclust(dist(data2))), cexRow=3, cexCol=3, col=colorRampPalette(c("red", "yellow", "green"))(n = 299), labCol = names, labRow = c(), margins=c(42,8))
+dev.off()
+
+# draw boxplot of normalised data expression levels
+png(file="finalboxplot-all.png", units="px")
+boxplot(log2(eset2), las=2, ylab='Normalised expression level', cex.lab= 1.5, cex.axis= 1,names=names, col="red", cex=1)
+dev.off() # log2-transformation completed by rma() above already
+
 
 #----------------------------------------------- allocating breast cancer subtypes ----------------------------------------------- 
 # filter out lumA
@@ -187,7 +212,7 @@ her2 <-rbind(her2,NPP)
 her2$subtypes = 'her2'
 her2 <- her2[order(her2$pcr_rd),] # sort groups in response to pcr / rd
 
-#----------------------------------------------- PCA plots ------------------------------------------
+#----------------------------------------------- PCA plots (after normalisation) ------------------------------------------
 newdata <- rbind(tnbc,lumA,lumB,her2)
 na <- sdata[!sdata$sample.no.%in%newdata$sample.no.,]  
 na$subtypes <- 'N/A'
