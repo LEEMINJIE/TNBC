@@ -98,15 +98,15 @@ data = subset(data, select = -c(X)) # remove the first column
 celfiles <- list.files(getwd(), pattern="CEL") # get all celfiles name 
 data$celfiles= celfiles # add a column called “celfiles” to the dataframe
  
-#might be useful for allocating the subtypes
-sample.no. <- data[,2] 			# accession number
+#rename metadata column name
+sample.no. <- data[,2] 				# accession number
 pam50_class<- data[,71] 			# pam50_class 
 nodal_status <- data[,59] 	   		# clinical_nodal_status.ch1
 pcr_rd <- data[,72]				 #pathologic_response_pcr_rd:ch1
 rcb <- data[,73] 				# pathologic_response_rcb_class:ch1 (residual cancer burden)
 her2.status <- data[,70] 			# her2_status:ch1
 er.status <- data[,65]				 # er_status_ihc:ch1
-pr.status  <- data[,74] 				# pr_status_ihc:ch1
+pr.status  <- data[,74] 			# pr_status_ihc:ch1
 er_status_ihc <- data[,64] 			#er_status_ihc_esr1_for.indeterminate.ch1
 erbb2_status <-  data[,66] 			#erbb2_status.ch1
 clinical_t_stage  <- data[,60] 			#"clinical_t_stage.ch1"     
@@ -119,13 +119,12 @@ chemosensitivity.prediction <- data[,57] 	#chemosensitivity_prediction:ch1
 dlda30  <- data[,61] 				#dlda30_prediction:ch1
 drfs <- data[,62]				#drfs_1_event_0_censored.ch1 (distance relapse free survival)
 						#censoring status; 0=censored, 1=event.
-drfs_years <- data[,63]			# drfs_even_time_years.ch1
-celfiles  <- data[,81]                                        # each celfies 
+drfs_years <- data[,63]				#drfs_even_time_years.ch1
+celfiles  <- data[,81]                          #celfies
 
 # make a smaller dataframe (sdata) with only some metadata are included
 sdata <- data.frame(sample.no., her2.status, er.status, pr.status,er_status_ihc, erbb2_status, ajcc, nodal_status,set_class, rcb_prediction, chemosensitivity.prediction, pcr_rd, rcb, clinical_t_stage, grade,drfs_years ,celfiles) 
 
-DGE analysis of TNBC vs non-TNBC
 #filter out TNBC subtype 
 tnbc <- sdata %>% filter(her2.status == "N", er.status == "N", pr.status == "N") # filter out TNBC subtypes
 dim(tnbc) # check the total number of tnbc (should be 178)
@@ -157,10 +156,25 @@ boxplot(log2(eset), las=2, ylab='log2 of expression level', names=names, col="re
 dev.off() # log2 here because no transformation completed
 
 #normalise the rawdata
-normdata_tnbc_nontnbc <-rma(rawdata_tnbc_nontnbc )
+normdata_tnbc_nontnbc <-rma(rawdata_tnbc_nontnbc)
 eset2 <-exprs(normdata_tnbc_nontnbc)
 length(rownames(eset2)) #22283 probes
 
+# allocating breast cancer subtypes
+# filter out lumA
+lumA <- sdata %>% filter(er.status == "P", pr.status == "P", her2.status == "N") # filter out lumA subtypes
+dim(lumA) # check the total number of lumA (216)
+
+PNN <- sdata %>% filter(er.status == "P", pr.status == "N", her2.status == "N") # filter out subtypes
+dim(PNN) # check the total number of PNN (72)
+NPN <- sdata %>% filter(er.status == "N", pr.status == "P", her2.status == "N") # filter out subtypes
+dim(NPN) # check the total number of NPN (17)
+int1 <- sdata %>% filter(er.status == "I", er_status_ihc == "P", erbb2_status == "N") 
+int2 <- sdata %>% filter(er.status == "I", er_status_ihc == "N", erbb2_status == "N")
+lumA <-rbind(lumA,PNN,NPN,int1,int2)
+lumA$subtypes = 'lumA'
+
+# DGE analysis of TNBC vs non-TNBC
 # do volcano plots for each pairwise comparison
 library(limma) # check limma is working, use install.packages(“limma”) if it is not 
 mypch2_tnbc_nontnbc <- c(rep(1,178),rep(2,330)) # 1:330 in mydata_tnbc_nontnbc= non-TNBC , 331:508 = TNBC 
@@ -174,7 +188,8 @@ top1_tnbc_nontnbc <- topTable(top0_tnbc_nontnbc, coef='T - N',adjust='BH',number
 up.reg1_tnbc_nontnbc  <- top1_tnbc_nontnbc%>%filter(top1_tnbc_nontnbc$logFC < -1.5)
 up.reg1_tnbc_nontnbc  <- up.reg1_tnbc_nontnbc %>%filter(up.reg1_tnbc_nontnbc$ adj.P.Val < 0.05)
 names_upreg_nontnbc <- rownames(up.reg1_tnbc_nontnbc) #31 probes
-up.reg2_tnbc_nontnbc <- top1_tnbc_nontnbc%>%filter(top1_tnbc_nontnbc$logFC > 1.5) #upregulated probes inTNBC
+#upregulated probes in TNBC
+up.reg2_tnbc_nontnbc <- top1_tnbc_nontnbc%>%filter(top1_tnbc_nontnbc$logFC > 1.5)
 up.reg2_tnbc_nontnbc <- up.reg2_tnbc_nontnbc%>%filter(up.reg2_tnbc_nontnbc$ adj.P.Val  <0.05)
 names_upreg_tnbc <- rownames(up.reg2_tnbc_nontnbc) #9 probes
 
@@ -187,8 +202,8 @@ abline(v=1.5, col="red")
 abline(h=1.3, col="green")
 dev.off()
 
-DGE analysis of TNBC(RD) vs non-TNBC(RD)
-#filter out TNBC subtype (RD)
+
+#filter out each population ----- TNBC(RD), TNBC(pCR), non-TNBC(RD), non-TNBC(pCR)
 rd_tnbc <- tnbc%>%filter(pcr_rd == 'RD') #113
 pcr_tnbc <- tnbc%>%filter(pcr_rd == 'pCR') #57
 rd_data2 <- data2%>%filter(pcr_rd == 'RD') #276
@@ -201,7 +216,8 @@ mydata_rd_pcr_tnbc_nontnbc <- rbind(rd_tnbc,pcr_tnbc,rd_data2,pcr_data2,other)
 rawdata_rd_pcr_tnbc_nontnbc <- read.celfiles(mydata_rd_pcr_tnbc_nontnbc$celfiles)
 normdata_rd_pcr_tnbc_nontnbc <-rma(rawdata_rd_pcr_tnbc_nontnbc) 
 
-# do volcano plots for each pairwise comparison
+# make volcano plots for each pairwise comparison
+# DGE analysis of TNBC(RD) vs non-TNBC(RD)
 mypch2_rd_pcr_tnbc_nontnbc <- c(rep(1,113),rep(2,57),rep(3,276),rep(4,42),rep(5,20))	
 design_rd_pcr_tnbc_nontnbc <- model.matrix(~-1+factor(mypch2_rd_pcr_tnbc_nontnbc))
 colnames(design_rd_pcr_tnbc_nontnbc)<- c('T.rd', 'T.pcr','N.rd', 'N.pcr','other') 
@@ -229,8 +245,8 @@ abline(v=-1.5, col="red")
 abline(h=1.3, col="green")
 dev.off()
 
-##DGE analysis of TNBC(pCR) vs non-TNBC(pCR)
-# do volcano plots for each pairwise comparison
+# DGE analysis of TNBC(pCR) vs non-TNBC(pCR)
+# make volcano plots for each pairwise comparison
 mypch2_rd_pcr_tnbc_nontnbc <- c(rep(1,113),rep(2,57),rep(3,276),rep(4,42),rep(5,20))	
 design_rd_pcr_tnbc_nontnbc <- model.matrix(~-1+factor(mypch2_rd_pcr_tnbc_nontnbc))
 colnames(design_rd_pcr_tnbc_nontnbc)<- c('T.rd', 'T.pcr','N.rd', 'N.pcr','other') 
@@ -258,8 +274,8 @@ abline(v=-1.5, col="red")
 abline(h=1.3, col="green")
 dev.off()
 
-##DGE analysis of TNBC(RD) vs TNBC(pCR)
-# do volcano plots for each pairwise comparison
+# DGE analysis of TNBC(RD) vs TNBC(pCR)
+# make volcano plots for each pairwise comparison
 mypch2_rd_pcr_tnbc_nontnbc <- c(rep(1,113),rep(2,57),rep(3,276),rep(4,42),rep(5,20))	
 design_rd_pcr_tnbc_nontnbc <- model.matrix(~-1+factor(mypch2_rd_pcr_tnbc_nontnbc))
 colnames(design_rd_pcr_tnbc_nontnbc)<- c('T.rd', 'T.pcr','N.rd', 'N.pcr','other') 
@@ -285,8 +301,8 @@ abline(v=-1.5, col="red")
 abline(h=1.3, col="green")
 dev.off()
 
-##DGE analysis of non-TNBC(RD) vs non-TNBC(pCR)
-# do volcano plots for each pairwise comparison
+# DGE analysis of non-TNBC(RD) vs non-TNBC(pCR)
+# make volcano plots for each pairwise comparison
 mypch2_rd_pcr_tnbc_nontnbc <- c(rep(1,113),rep(2,57),rep(3,276),rep(4,42),rep(5,20))	
 design_rd_pcr_tnbc_nontnbc <- model.matrix(~-1+factor(mypch2_rd_pcr_tnbc_nontnbc))
 colnames(design_rd_pcr_tnbc_nontnbc)<- c('T.rd', 'T.pcr','N.rd', 'N.pcr','other') 
@@ -314,18 +330,7 @@ abline(v=-1.5, col="red")
 abline(h=1.3, col="green")
 dev.off()
 
-##DGE analysis of lumA(RD) vs lumA(pCR)
-lumA <- sdata %>% filter(er.status == "P", pr.status == "P", her2.status == "N") # filter out lumA subtypes
-dim(lumA) # check the total number of lumA (216)
-
-PNN <- sdata %>% filter(er.status == "P", pr.status == "N", her2.status == "N") # filter out subtypes
-dim(PNN) # check the total number of PNN (72)
-NPN <- sdata %>% filter(er.status == "N", pr.status == "P", her2.status == "N") # filter out subtypes
-dim(NPN) # check the total number of NPN (17)
-int1 <- sdata %>% filter(er.status == "I", er_status_ihc == "P", erbb2_status == "N") 
-int2 <- sdata %>% filter(er.status == "I", er_status_ihc == "N", erbb2_status == "N")
-lumA <-rbind(lumA,PNN,NPN,int1,int2)
-lumA$subtypes = 'lumA'
+# DGE analysis of lumA(RD) vs lumA(pCR)
 lumA <- lumA[order(lumA$pcr_rd),]   # sort groups in response to pcr / rd
 
 rd_lumA <- lumA%>%filter(pcr_rd == 'RD') #261
