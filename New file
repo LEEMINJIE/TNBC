@@ -75,7 +75,7 @@ length(huex) # list of 22,283 of linked probes and genes
 mapped_probes <- mappedkeys(huex) # Convert to a list
 xxhuex <- as.list(huex[mapped_probes]) # compare mapped probes # 22,283 elements
 
-##write csv file for GSE25066 dataset
+#----------------------------------------------- write csv file for GSE25066 dataset ----------------------------------------------- 
 geo <- getGEO("GSE25066",GSEMatrix=TRUE,getGPL=FALSE)
 if (length(geo) > 1) idx <- grep("GPL96", attr(geo, "names")) else idx <- 1
 expression.set <- geo[[idx]]
@@ -88,10 +88,10 @@ head(expression.set2)
 data <- pData(expression.set)[,] #dataframe with 508 rows and 80 columns
 write.csv(x=data, file="GSE25066.csv") # dataframe is saved as csv file in the CELFILES directory
 
+
+#----------------------------------------------- read data ----------------------------------------------- 
 ##Part 2 - QC
 names <- 1:508
-
-#read data
 data <- read.csv("GSE25066.csv")
 colnames(data)
 data = subset(data, select = -c(X)) # remove the first column
@@ -160,7 +160,7 @@ normdata_tnbc_nontnbc <-rma(rawdata_tnbc_nontnbc)
 eset2 <-exprs(normdata_tnbc_nontnbc)
 length(rownames(eset2)) #22283 probes
 
-# allocating breast cancer subtypes
+#----------------------------------------------- allocating breast cancer subtypes ----------------------------------------------- 
 # filter out lumA
 lumA <- sdata %>% filter(er.status == "P", pr.status == "P", her2.status == "N") # filter out lumA subtypes
 dim(lumA) # check the total number of lumA (216)
@@ -173,6 +173,81 @@ int1 <- sdata %>% filter(er.status == "I", er_status_ihc == "P", erbb2_status ==
 int2 <- sdata %>% filter(er.status == "I", er_status_ihc == "N", erbb2_status == "N")
 lumA <-rbind(lumA,PNN,NPN,int1,int2)
 lumA$subtypes = 'lumA'
+
+lumB <- sdata %>% filter(er.status == "P", pr.status == "P", her2.status == "P") # filter out lumB subtypes
+dim(lumB) # check the total number of lumB (2)
+lumB <- lumB[order(lumB$pcr_rd),] # sort groups in response to pcr / rd
+lumB$subtypes = 'lumB'
+
+her2 <- sdata %>% filter(er.status == "N", pr.status == "N", her2.status == "P") # filter out her2 subtypes
+dim(her2) # check the total number of her2 (3)
+NPP <- sdata %>% filter(er.status == "N", pr.status == "P", her2.status == "P") # filter out subtypes
+dim(NPP) # check the total number of NPP (1)
+her2 <-rbind(her2,NPP)
+her2$subtypes = 'her2'
+her2 <- her2[order(her2$pcr_rd),] # sort groups in response to pcr / rd
+
+#----------------------------------------------- PCA plots ------------------------------------------
+newdata <- rbind(tnbc,lumA,lumB,her2)
+na <- sdata[!sdata$sample.no.%in%newdata$sample.no.,]  
+na$subtypes <- 'N/A'
+newdata <- rbind(newdata,na)
+newdata <- read.celfiles(newdata$celfiles)
+normnewdata<-rma(newdata)  #normalise the newdata
+eset3<- exprs(normnewdata)
+pca_proc1<- prcomp(t(eset3))
+
+pcvalue1 = round(100*pca_proc1$sdev[1]^2/(sum(pca_proc1$sdev^2)),1)
+pcvalue2 = round(100*pca_proc1$sdev[2]^2/(sum(pca_proc1$sdev^2)),1)
+pcvalue3 = round(100*pca_proc1$sdev[3]^2/(sum(pca_proc1$sdev^2)),1)
+pcvalue4 = round(100*pca_proc1$sdev[4]^2/(sum(pca_proc1$sdev^2)),1)
+ 
+pcvalue1hw = 40*pcvalue1 # pixel PC1
+pcvalue2hw = 40*pcvalue2 # pixel PC2
+pcvalue3hw = 40*pcvalue3 # pixel PC3
+pcvalue4hw = 40*pcvalue4 # pixel PC4
+ 
+mycol <- c(rep("blue",178),rep("orange",309),rep("green",2),rep("red",4),rep("black",15)) # group samples
+mypch = rep(20,508) # pattern
+names <- 1:508
+
+#PC1 vs PC2
+png(file="PCA-1v2-IHCsubtypes.png", width=pcvalue1hw, height=pcvalue2hw, units="px")
+plot(pca_proc1$x[,1], pca_proc1$x[,2], col=mycol, pch=mypch, xlab=paste0("PC1: ",pcvalue1,"% variance"), ylab=paste0("PC2: ",pcvalue2,"% variance"),xlim=c(-65,65), ylim=c(-60,60),main='PC1 vs PC2', cex=1, cex.axis=1, cex.lab=1)
+legend("topleft", col=unique(mycol), legend = c('TNBC','LumA','LumB','Her2','N/A'),pch = 20, bty='n', cex=.75)
+dev.off()
+
+#PC2 vs PC3
+png(file="PCA-2v3-IHCsubtypes.png", width=pcvalue1hw, height=pcvalue2hw, units="px")
+plot(pca_proc1$x[,2], pca_proc1$x[,3], col=mycol, pch=mypch,  xlab=paste0("PC2: ",pcvalue2,"% variance"), ylab=paste0("PC3: ",pcvalue3,"% variance"),xlim=c(-65,65), ylim=c(-60,60), main='PC2 vs PC3', cex=1, cex.axis=1, cex.lab=1) 
+legend("topleft", col=unique(mycol), legend =  c('TNBC','LumA','LumB','Her2','N/A'),pch = 20, bty='n', cex=.75)
+dev.off()
+
+#PC3 vs PC4
+png(file="PCA-3v4-IHCsubtypes.png", width=pcvalue1hw, height=pcvalue2hw, units="px")
+plot(pca_proc1$x[,3], pca_proc1$x[,4], col=mycol, pch=mypch,  xlab=paste0("PC3: ",pcvalue3,"% variance"), ylab=paste0("PC4: ",pcvalue4,"% variance"),xlim=c(-65,65), ylim=c(-60,60), main='PC3 vs PC4', cex=1, cex.axis=1, cex.lab=1) 
+legend("topleft", col=unique(mycol), legend =  c('TNBC','LumA','LumB','Her2','N/A'),pch = 20, bty='n', cex=.75)
+dev.off()
+
+#PC1 vs PC3
+png(file="PCA-1v3-IHCsubtypes.png", width=pcvalue1hw, height=pcvalue2hw, units="px")
+plot(pca_proc1$x[,1], pca_proc1$x[,3], col=mycol, pch=mypch,  xlab=paste0("PC1: ",pcvalue1,"% variance"), ylab=paste0("PC3: ",pcvalue3,"% variance"),xlim=c(-65,65), ylim=c(-60,60), main='PC1 vs PC3', cex=1, cex.axis=1, cex.lab=1) 
+legend("topleft", col=unique(mycol), legend =  c('TNBC','LumA','LumB','Her2','N/A'),pch = 20, bty='n', cex=.75)
+dev.off()
+
+#PC1 vs PC4
+png(file="PCA-1v4-IHCsubtypes.png", width=pcvalue1hw, height=pcvalue2hw, units="px")
+plot(pca_proc1$x[,1], pca_proc1$x[,4], col=mycol, pch=mypch,  xlab=paste0("PC1: ",pcvalue1,"% variance"), ylab=paste0("PC4: ",pcvalue4,"% variance"),xlim=c(-65,65), ylim=c(-60,60), main='PC1 vs PC4', cex=1, cex.axis=1, cex.lab=1) 
+legend("topleft", col=unique(mycol), legend =  c('TNBC','LumA','LumB','Her2','N/A'),pch = 20, bty='n', cex=.75)
+dev.off()
+
+#PC2 vs PC4
+png(file="PCA-2v4-IHCsubtypes.png", width=pcvalue1hw, height=pcvalue2hw, units="px")
+plot(pca_proc1$x[,2], pca_proc1$x[,4], col=mycol, pch=mypch,  xlab=paste0("PC2: ",pcvalue2,"% variance"), ylab=paste0("PC4: ",pcvalue4,"% variance"),xlim=c(-65,65), ylim=c(-60,60), main='PC2 vs PC4', cex=1, cex.axis=1, cex.lab=1) 
+legend("topleft", col=unique(mycol), legend =  c('TNBC','LumA','LumB','Her2','N/A'),pch = 20, bty='n', cex=.75)
+dev.off()
+
+#----------------------------------------------- DGE analysis ------------------------------------------
 
 # DGE analysis of TNBC vs non-TNBC
 # do volcano plots for each pairwise comparison
