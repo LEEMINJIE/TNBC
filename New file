@@ -1159,6 +1159,60 @@ info <- select(hgu133a.db, rownames(table_tnbc_nontnbc_stage3), c("SYMBOL","GENE
 table_tnbc_nontnbc_stage3 <- cbind(table_tnbc_nontnbc_stage3,info)
 write.csv(table_tnbc_nontnbc_stage3, 'table_ajcc_stage3_probe_ann.csv')
 
+#compare stage2 (TNBC)  to stage 3 (TNBC)
+# do volcano plots for each pairwise comparison
+mypch_ajcc <- c(rep(1,4),rep(2,85),rep(3,87),rep(4,4),rep(5,187),rep(6,137),rep(7,4)) 
+design_ajcc <- model.matrix(~-1+factor(mypch_ajcc))
+colnames(design_ajcc)<- c('Stage1t', 'Stage2t','Stage3t','Stage1n', 'Stage2n','Stage3n','other') #  group labels
+
+top0_tnbc <-  eBayes(contrasts.fit(lmFit(normdata_ajcc, design_ajcc), makeContrasts(Stage2t - Stage3t, levels=design_ajcc))) #compare stage2 of tnbc to stage3 of tnbc
+top1_tnbc <- topTable(top0_tnbc, coef='Stage2t - Stage3t',adjust='BH',number=22283,sort.by='P')
+
+#upregulated probes in stage 2t
+up.reg2_tnbc_ajcc <- top1_tnbc %>%filter(top1_tnbc$logFC > 1.5) 
+up.reg2_tnbc_ajcc  <- up.reg2_tnbc_ajcc %>%filter(up.reg2_tnbc_ajcc$adj.P.Val<0.05)
+names_upreg2_tnbc_ajcc <- rownames(up.reg2_tnbc_ajcc) #9
+#upregulated probes in stage 3t
+up.reg3_tnbc_ajcc <- top1_tnbc %>%filter(top1_tnbc$logFC > 1.5) 
+up.reg3_tnbc_ajcc  <- up.reg3_tnbc_ajcc %>%filter(up.reg3_tnbc_ajcc$adj.P.Val<0.05)
+names_upreg3_tnbc_ajcc <- rownames(up.reg3_tnbc_ajcc) #9
+
+png(file="volcano-TNBC-ajcc-stage2t_vs_stage3t.png",units="px")
+plot(top1_tnbc$logFC,-log10(top1_tnbc$adj.P.Val), main='Differential Gene Expression of TNBC Stage2 vs TNBC Stage3', xlab='log2FC(TNBC Stage2/TNBC Stage3)',ylab='-log10(BH P value)', cex=0.5, cex.main=1.2,cex.axis=1, cex.lab=1, pch=21,xlim=c(-2,2))
+text(1.5,40,label='Upregulated in \n Stage2',cex=1)
+text(-1.5,40,label='Upregulated in \n Stage3',cex=1)
+abline(v=-1.5, col="red")
+abline(v=1.5, col="red")
+abline(h=1, col="green")
+dev.off()
+
+# compare stage2 (Non-TNBC)  to stage 3 (Non-TNBC)
+# do volcano plots for each pairwise comparison
+mypch_ajcc <- c(rep(1,4),rep(2,85),rep(3,87),rep(4,4),rep(5,187),rep(6,137),rep(7,4)) 
+design_ajcc <- model.matrix(~-1+factor(mypch_ajcc))
+colnames(design_ajcc)<- c('Stage1t', 'Stage2t','Stage3t','Stage1n', 'Stage2n','Stage3n','other') #  group labels
+
+top0_nontnbc <-  eBayes(contrasts.fit(lmFit(normdata_ajcc, design_ajcc), makeContrasts(Stage2n - Stage3n, levels=design_ajcc))) #compare stage2 of nontnbc to stage3 of nontnbc
+top1_nontnbc <- topTable(top0_nontnbc, coef='Stage2n - Stage3n',adjust='BH',number=22283,sort.by='P')
+
+#upregulated probes in stage 2n
+up.reg2_nontnbc_ajcc <- top1_nontnbc %>%filter(top1_nontnbc$logFC > 1.5) 
+up.reg2_nontnbc_ajcc  <- up.reg2_nontnbc_ajcc %>%filter(up.reg2_nontnbc_ajcc$adj.P.Val<0.05)
+names_upreg2_nontnbc_ajcc <- rownames(up.reg2_nontnbc_ajcc) #9
+#upregulated probes in stage 3n
+up.reg3_nontnbc_ajcc <- top1_nontnbc %>%filter(top1_nontnbc$logFC > 1.5) 
+up.reg3_nontnbc_ajcc  <- up.reg3_nontnbc_ajcc %>%filter(up.reg3_nontnbc_ajcc$adj.P.Val<0.05)
+names_upreg3_nontnbc_ajcc <- rownames(up.reg3_nontnbc_ajcc) #9
+
+png(file="volcano-NonTNBC-ajcc-stage2n_vs_stage3n.png",units="px")
+plot(top1_nontnbc$logFC,-log10(top1_nontnbc$adj.P.Val), main='Differential Gene Expression of \n Non-TNBC Stage2 vs Non-TNBC Stage3', xlab='log2FC(Non-TNBC Stage2/Non-TNBC Stage3)',ylab='-log10(BH P value)', cex=0.5, cex.main=1,cex.axis=1, cex.lab=1, pch=21,xlim=c(-2,2))
+text(1.2,40,label='Upregulated in \n Stage2',cex=0.8)
+text(-1.2,40,label='Upregulated in \n Stage3',cex=0.8)
+abline(v=-1.5, col="red")
+abline(v=1.5, col="red")
+abline(h=1, col="green")
+dev.off()
+
 #----------------------------------------------- Ca2+ channel mRNA expression ------------------------------------------
 #ORAI3 expression in TNBC and NonTNBC
 orai3 <- subset(eset2,  rownames(eset2) == '221864_at')
